@@ -80,9 +80,9 @@ I'm currently particularly interested in applying my data skills in the charity 
 
 ## 📫 Get in touch
 
-- 💼 [LinkedIn](YOUR-LINKEDIN-URL)
-- 📧 [Email](mailto:YOUR-EMAIL)
-- 🌐 [Portfolio](YOUR-GITHUB-PAGES-URL)
+- 💼 [LinkedIn](https://www.linkedin.com/in/laura-kristapaite-a45b071a3/)
+- 📧 [Email](mailto:kristapaite@proton.me)
+- 🌐 [Portfolio](kristapaite-l.github.io)
 
 ---
 
