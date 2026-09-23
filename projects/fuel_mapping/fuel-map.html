@@ -166,29 +166,39 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased">
 
-  <!-- Header / Navigation -->
   <header class="w-full border-b border-borderLight bg-canvas/80 backdrop-blur-md sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <a href="#" class="font-serif text-2xl tracking-tight text-stone-900 font-normal hover:opacity-80 transition">
+      <!-- Relative link back to homepage root -->
+      <a href="../../index.html" class="font-serif text-2xl tracking-tight text-stone-900 font-normal hover:opacity-80 transition">
         Laura Kristapaite
       </a>
+      
+      <!-- Desktop relative links -->
       <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-stone-600">
-        <a href="#projects" class="text-brand-800 font-semibold border-b-2 border-brand-800 pb-0.5">Projects</a>
-        <a href="#about" class="hover:text-stone-900 transition">About</a>
-        <a href="#cv" class="hover:text-stone-900 transition">CV</a>
-        <a href="#contact" class="hover:text-stone-900 transition">Contact</a>
+        <a href="../../index.html#projects" class="text-brand-800 font-semibold border-b-2 border-brand-800 pb-0.5">Projects</a>
+        <a href="../../index.html#about" class="hover:text-stone-900 transition">About</a>
+        <a href="../../index.html#cv" class="hover:text-stone-900 transition">CV</a>
+        <a href="../../index.html#contact" class="hover:text-stone-900 transition">Contact</a>
       </nav>
-      <!-- Mobile navigation menu button -->
-      <button class="md:hidden text-stone-700 hover:text-stone-900" aria-label="Toggle Menu">
+
+      <!-- Mobile navigation toggle -->
+      <button onclick="toggleMobileMenu()" class="md:hidden text-stone-700 hover:text-stone-900 p-2 focus:outline-none" aria-label="Toggle Menu">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
     </div>
+
+    <!-- Mobile dropdown navigation links -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-borderLight bg-canvas px-4 pt-3 pb-4 space-y-3 text-sm font-medium text-stone-600">
+      <a href="../../index.html#projects" class="block text-brand-800 font-semibold py-1">Projects</a>
+      <a href="../../index.html#about" class="block hover:text-stone-900 py-1 transition">About</a>
+      <a href="../../index.html#cv" class="block hover:text-stone-900 py-1 transition">CV</a>
+      <a href="../../index.html#contact" class="block hover:text-stone-900 py-1 transition">Contact</a>
+    </div>
   </header>
 
-  <!-- Main Content Area -->
   <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-12">
 
-    <!-- Project Title & Subtitle -->
+    <!-- Project Title & Description -->
     <section class="space-y-3">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-100 text-brand-800 text-xs font-semibold tracking-wider uppercase">
         <span class="w-2 h-2 rounded-full bg-brand-800 animate-pulse"></span>
@@ -202,10 +212,10 @@
       </p>
     </section>
 
-    <!-- Search Controls & Data Timestamp Bar -->
+    <!-- Search Controls Bar -->
     <section class="space-y-4">
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        <!-- Input & Search Button -->
+        <!-- Search Input -->
         <div class="flex flex-1 max-w-lg items-center gap-2">
           <div class="relative flex-1">
             <input 
@@ -232,16 +242,15 @@
         </div>
       </div>
 
-      <!-- Leaflet Map Container -->
+      <!-- Map Container -->
       <div class="relative w-full h-[480px] sm:h-[540px] rounded-2xl overflow-hidden border border-borderLight shadow-md">
         <div id="map" class="w-full h-full z-0"></div>
       </div>
     </section>
 
-    <!-- Explanation Section for Non-Technical Audience -->
     <section class="border-t border-borderLight pt-12 mt-12 space-y-8">
       
-      <!-- Section Header -->
+      <!-- Section Title -->
       <div class="space-y-2">
         <div class="text-xs font-semibold text-brand-800 uppercase tracking-widest">Under the Hood</div>
         <h2 class="font-serif text-2xl sm:text-3xl text-stone-900">How This Tool Was Built</h2>
@@ -250,7 +259,7 @@
         </p>
       </div>
 
-      <!-- Grid of 4 Explanatory Cards -->
+      <!-- 4 Explanatory Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         <!-- Card 1 -->
@@ -299,7 +308,7 @@
 
       </div>
 
-      <!-- Tech Stack Badges Bar -->
+      <!-- Tech Stack Badges -->
       <div class="bg-stone-100/80 p-6 rounded-2xl border border-stone-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Technology Stack</span>
         <div class="flex flex-wrap gap-2">
@@ -323,8 +332,15 @@
     </div>
   </footer>
 
-  <!-- Application JavaScript -->
   <script>
+    // Toggle mobile navigation dropdown
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      if (menu) {
+        menu.classList.toggle('hidden');
+      }
+    }
+
     // Geographic boundaries for the UK
     const ukBounds = L.latLngBounds(
       L.latLng(49.8, -8.5), // South West
@@ -344,11 +360,10 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Global store for parsed fuel stations and Leaflet layer group
     let allStations = [];
     const markerGroup = L.layerGroup().addTo(map);
 
-    // Sample fallback fuel dataset in case CSV download is constrained in preview mode
+    // Sample fallback dataset for preview/offline mode
     const fallbackDataset = [
       { "forecourts.trading_name": "Shell London Central", "forecourts.brand_name": "Shell", "forecourts.location.address_line_1": "120 Euston Rd", "forecourts.location.city": "London", "forecourts.location.postcode": "NW1 2AL", "forecourts.location.latitude": "51.5287", "forecourts.location.longitude": "-0.1338", "forecourts.fuel_price.E10": "139.9", "forecourts.fuel_price.B7S": "145.9", "forecourts.amenities.twenty_four_hour_fuel": "true", "forecourts.amenities.vehicle_services.car_wash": "true", "forecourts.is_supermarket_service_station": "false" },
       { "forecourts.trading_name": "BP Kings Cross", "forecourts.brand_name": "BP", "forecourts.location.address_line_1": "24 York Way", "forecourts.location.city": "London", "forecourts.location.postcode": "N1 9AA", "forecourts.location.latitude": "51.5320", "forecourts.location.longitude": "-0.1220", "forecourts.fuel_price.E10": "142.9", "forecourts.fuel_price.B7S": "148.9", "forecourts.amenities.twenty_four_hour_fuel": "true", "forecourts.amenities.vehicle_services.car_wash": "false", "forecourts.is_supermarket_service_station": "false" },
@@ -357,7 +372,7 @@
       { "forecourts.trading_name": "Texaco Paddington", "forecourts.brand_name": "Texaco", "forecourts.location.address_line_1": "45 Edgware Rd", "forecourts.location.city": "London", "forecourts.location.postcode": "W2 2JE", "forecourts.location.latitude": "51.5160", "forecourts.location.longitude": "-0.1620", "forecourts.fuel_price.E10": "144.9", "forecourts.fuel_price.B7S": "150.9", "forecourts.amenities.twenty_four_hour_fuel": "false", "forecourts.amenities.vehicle_services.car_wash": "false", "forecourts.is_supermarket_service_station": "false" }
     ];
 
-    // Parse CSV on load
+    // Load CSV from relative path ../../data/fuel_prices.csv
     Papa.parse('../../data/fuel_prices.csv', {
       download: true,
       header: true,
@@ -392,7 +407,7 @@
       }
     }
 
-    // Haversine Distance Formula in kilometers
+    // Distance calculation formula
     function getDistanceKm(lat1, lon1, lat2, lon2) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -403,25 +418,22 @@
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
-    // Format price to 1 decimal place
     function formatPrice(val) {
       if (!val || isNaN(val)) return null;
       return parseFloat(val).toFixed(1);
     }
 
-    // Continuous RGB interpolation: Green (Lowest) -> Yellow/Orange -> Dark Red (Highest)
+    // Continuous RGB interpolation from Green -> Yellow -> Red
     function getContinuousPriceColor(ratio) {
       const t = Math.max(0, Math.min(1, ratio));
       let r, g, b;
 
       if (t < 0.5) {
-        // Green (46, 125, 50) to Yellow/Orange (245, 158, 11)
         const factor = t * 2;
         r = Math.round(46 + factor * (245 - 46));
         g = Math.round(125 + factor * (158 - 125));
         b = Math.round(50 + factor * (11 - 50));
       } else {
-        // Yellow/Orange (245, 158, 11) to Dark Red (198, 40, 40)
         const factor = (t - 0.5) * 2;
         r = Math.round(245 + factor * (198 - 245));
         g = Math.round(158 + factor * (40 - 158));
@@ -431,14 +443,12 @@
       return `rgb(${r}, ${g}, ${b})`;
     }
 
-    // Location Search Handler (Postcode or Place Name)
     async function searchLocation() {
       const query = document.getElementById('location-input').value.trim();
       if (!query) return;
 
       let lat, lng;
 
-      // 1. Try Postcode Lookup
       try {
         const pcRes = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(query)}`);
         const pcData = await pcRes.json();
@@ -446,11 +456,8 @@
           lat = pcData.result.latitude;
           lng = pcData.result.longitude;
         }
-      } catch (e) {
-        // Fall back to Nominatim
-      }
+      } catch (e) {}
 
-      // 2. Try Nominatim Geocoding for Place Names
       if (!lat || !lng) {
         try {
           const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=gb&q=${encodeURIComponent(query)}`);
@@ -459,12 +466,9 @@
             lat = parseFloat(geoData[0].lat);
             lng = parseFloat(geoData[0].lon);
           }
-        } catch (e) {
-          // Fall back gracefully
-        }
+        } catch (e) {}
       }
 
-      // Fallback default coordinates if offline or restricted (e.g. London NW1)
       if (!lat || !lng) {
         if (query.toLowerCase().includes('london') || query.toLowerCase().includes('np4')) {
           lat = 51.5287;
@@ -478,7 +482,6 @@
       renderNearbyStations(lat, lng);
     }
 
-    // Filter and render markers within ~12km
     function renderNearbyStations(centerLat, centerLng) {
       markerGroup.clearLayers();
 
@@ -516,7 +519,6 @@
         const e10Display = e10Formatted ? `${e10Formatted}p` : 'N/A';
         const b7Display = b7Formatted ? `${b7Formatted}p` : 'N/A';
 
-        // Calculate RGB dynamic color based on local price range
         let markerColor = '#2e7d32';
         if (s.e10Val && minPrice !== null && maxPrice !== null && maxPrice > minPrice) {
           const ratio = (s.e10Val - minPrice) / (maxPrice - minPrice);
@@ -568,7 +570,6 @@
       }
     }
 
-    // Message notification toast (replaces alert)
     function showToast(message) {
       let toast = document.getElementById('toast-msg');
       if (!toast) {
