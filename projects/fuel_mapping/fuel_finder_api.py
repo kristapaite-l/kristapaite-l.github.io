@@ -2,8 +2,11 @@ import os
 import sys
 import pandas as pd
 from curl_cffi import requests
+from dotenv import load_dotenv
 
-# 1. Credentials from Environment Variables
+# Load variables from .env file into environment
+load_dotenv()
+
 CLIENT_ID = os.environ.get("FUEL_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("FUEL_CLIENT_SECRET")
 

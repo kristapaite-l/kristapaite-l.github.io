@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UK Fuel Price Finder | Laura Kristapaite</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%238c1d40'/><path d='M30 30 C30 50, 50 30, 50 50 C50 70, 70 50, 70 70 M30 70 C50 70, 50 50, 70 50' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' fill='none'/><circle cx='50' cy='50' r='8' fill='%23ffffff'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+:root {
+  --bg: #fbf9f5;
+  --bg-subtle: #f3efe6;
+  --ink: #1a1a1a;
+  --muted: #5e5a55;
+  --line: #e2ded4;
+  --card: #ffffff;
+  --accent: #8c1d40;
+  --accent-light: #f7e8ec;
+  --accent-hover: #6e1531;
+  --max: 1080px;
+  --font-serif: "Newsreader", Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font-sans); background: var(--bg); color: var(--ink); line-height: 1.6; }
+a { color: inherit; text-decoration: none; }
+
+.wrap { max-width: var(--max); margin: auto; padding: 0 24px; }
+
+/* Navigation & Dropdown */
+nav { position: sticky; top: 0; background: rgba(251, 249, 245, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); z-index: 1000; }
+.nav { height: 68px; display: flex; align-items: center; justify-content: space-between; }
+.brand { font-family: var(--font-serif); font-weight: 700; font-size: 1.25rem; }
+.links { display: flex; gap: 24px; font-size: 0.92rem; }
+.links a:hover { color: var(--accent); }
+
+.dropdown { position: relative; display: inline-block; }
+.dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-width: 230px; padding: 8px 0; z-index: 1001; }
+.dropdown-menu a { display: block; padding: 8px 16px; color: var(--ink); white-space: nowrap; }
+.dropdown-menu a:hover { background: var(--bg-subtle); color: var(--accent); }
+.dropdown:hover .dropdown-menu { display: block; }
+
+/* Header & Controls */
+.page-header { padding: 40px 0 20px; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.75rem; color: var(--accent); font-weight: 800; }
+h1 { font-family: var(--font-serif); font-weight: 600; font-size: 2.5rem; margin: 8px 0 16px; }
+
+.controls-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.search-input { padding: 10px 16px; border: 1px solid var(--line); border-radius: 999px; font-family: var(--font-sans); font-size: 0.9rem; width: 280px; background: var(--card); outline: none; }
+.search-input:focus { border-color: var(--accent); }
+.btn-search { padding: 10px 20px; border-radius: 999px; background: var(--accent); color: white; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
+.btn-search:hover { background: var(--accent-hover); }
+
+/* Map */
+#map { height: 650px; width: 100%; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 60px; }
+
+/* Custom Leaflet Popup Styles */
+.leaflet-popup-content-wrapper { background: var(--card); border-radius: 8px; padding: 4px; border: 1px solid var(--line); font-family: var(--font-sans); }
+.popup-container { padding: 6px 4px; font-size: 13px; min-width: 210px; }
+.popup-title { font-family: var(--font-serif); font-weight: 700; font-size: 16px; color: var(--accent); margin-bottom: 2px; }
+.popup-brand { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.popup-address { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+.price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--bg-subtle); padding: 8px; border-radius: 6px; margin-bottom: 10px; }
+.price-card { text-align: center; }
+.price-label { font-size: 10px; font-weight: 700; color: var(--muted); }
+.price-val { font-size: 14px; font-weight: 800; color: var(--ink); }
+.badge-bar { display: flex; gap: 4px; flex-wrap: wrap; }
+.badge { font-size: 10px; background: var(--accent-light); color: var(--accent); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+
+footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex; justify-content: space-between; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav">
+    <a href="../../index.html" class="brand">Laura Kristapaite</a>
+    <div class="links">
+      <div class="dropdown">
+        <a href="../../index.html#projects">Projects ▾</a>
+        <div class="dropdown-menu">
+          <a href="fuel-map.html">Interactive UK Fuel Price Map</a>
+        </div>
+      </div>
+      <a href="../../index.html#about">About</a>
+      <a href="../../index.html#cv">CV</a>
+      <a href="../../index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="page-header">
+    <div class="eyebrow">Live Visualisation</div>
+    <h1>UK Forecourt Fuel Finder</h1>
+    <p>Interactive mapping project parsing GOV.UK forecourt schemas using Leaflet.js and PapaParse.</p>
+    
+    <div class="controls-bar">
+      <input type="text" id="postcode-input" class="search-input" placeholder="Enter UK Postcode (e.g. NP4 6JU)">
+      <button onclick="searchPostcode()" class="btn-search">Search Area</button>
+    </div>
+  </div>
+
+  <div id="map"></div>
+</main>
+
+<footer class="wrap">
+  <span>© 2026 Laura Kristapaite</span>
+  <span><a href="../../index.html">← Back to Main Portfolio</a></span>
+</footer>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="../../assets/js/fuel-map.js"></script>
+
+</body>
+</html>
