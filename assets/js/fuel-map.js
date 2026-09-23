@@ -21,7 +21,37 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 let allStations = [];
 const markerGroup = L.layerGroup().addTo(map);
 
-// Parse CSV once on load, but DO NOT render any markers automatically
+// 1. Fetch file header to dynamically populate the data timestamp
+fetch('../../data/fuel_prices.csv', { method: 'HEAD' })
+  .then(response => {
+    const lastModified = response.headers.get('Last-Modified');
+    const timestampEl = document.getElementById('data-timestamp');
+    
+    if (timestampEl) {
+      if (lastModified) {
+        const dateObj = new Date(lastModified);
+        timestampEl.textContent = dateObj.toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } else {
+        timestampEl.textContent = new Date().toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+    }
+  })
+  .catch(() => {
+    const timestampEl = document.getElementById('data-timestamp');
+    if (timestampEl) timestampEl.textContent = 'Recent';
+  });
+
+// 2. Parse CSV once on load, but DO NOT render any markers automatically
 Papa.parse('../../data/fuel_prices.csv', {
   download: true,
   header: true,
@@ -32,7 +62,6 @@ Papa.parse('../../data/fuel_prices.csv', {
       const lng = parseFloat(row['forecourts.location.longitude']);
       return !isNaN(lat) && !isNaN(lng);
     });
-    // No marker creation loop here — map remains completely blank until search
   }
 });
 
