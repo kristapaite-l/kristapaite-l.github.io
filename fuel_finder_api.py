@@ -8,18 +8,21 @@ CLIENT_ID = os.environ.get("FUEL_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("FUEL_CLIENT_SECRET")
 
 if not CLIENT_ID or not CLIENT_SECRET:
-    print("Error: FUEL_CLIENT_ID or FUEL_CLIENT_SECRET environment variable is missing.")
+    print("Error: FUEL_CLIENT_ID or FUEL_CLIENT_SECRET missing.")
     sys.exit(1)
 
-# 2. Correct GOV.UK API Endpoints
-# Public API gateway host uses hyphens: api.fuel-finder.service.gov.uk
-BASE_URL = "https://api.fuel-finder.service.gov.uk"
+# 2. Production Domain and Endpoints
+BASE_URL = "https://www.fuel-finder.service.gov.uk"
 TOKEN_URL = f"{BASE_URL}/oauth/token"
-PRICES_ENDPOINT = f"{BASE_URL}/v1/prices"
+PRICES_ENDPOINT = f"{BASE_URL}/api/v1/prices"
 
+# 3. Headers required to satisfy Cloudflare firewall routing
 headers = {
     "Content-Type": "application/x-www-form-urlencoded",
-    "Accept": "application/json"
+    "Accept": "application/json, text/html, */*",
+    "Accept-Language": "en-GB,en;q=0.9",
+    "Referer": "https://www.fuel-finder.service.gov.uk/",
+    "Origin": "https://www.fuel-finder.service.gov.uk"
 }
 
 payload = {
@@ -32,7 +35,6 @@ payload = {
 print(f"Requesting token from: {TOKEN_URL}...")
 
 try:
-    # impersonate="chrome120" bypasses the SSL handshake failure triggered by Cloudflare/GOV.UK
     token_res = requests.post(
         TOKEN_URL, 
         data=payload, 
@@ -41,19 +43,27 @@ try:
         timeout=15
     )
     
-    print(f"Token Status Code: {token_res.status_code}")
+    print(f"Token Response Status: {token_res.status_code}")
     
     if token_res.status_code != 200:
-        print(f"Token generation error: {token_res.text}")
+        print(f"Token generation failed ({token_res.status_code}): {token_res.text}")
         sys.exit(1)
         
-    access_token = token_res.json().get("access_token")
+    res_data = token_res.json()
+    # Handle both wrapped response objects and root-level tokens
+    access_token = res_data.get("access_token") or res_data.get("data", {}).get("access_token")
+    
+    if not access_token:
+        print(f"Token missing from response payload: {res_data}")
+        sys.exit(1)
+        
     print("Successfully retrieved access token!")
 
-    # 3. Fetch Price Data
+    # 4. Fetch Price Data
     api_headers = {
         "Authorization": f"Bearer {access_token}",
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "Referer": "https://www.fuel-finder.service.gov.uk/"
     }
 
     print(f"Fetching fuel prices from: {PRICES_ENDPOINT}...")
@@ -64,16 +74,22 @@ try:
         timeout=30
     )
 
-    print(f"Data Fetch Status Code: {data_res.status_code}")
+    print(f"Data Response Status: {data_res.status_code}")
 
     if data_res.status_code != 200:
-        print(f"Data fetch error: {data_res.text}")
+        print(f"API Data fetch failed ({data_res.status_code}): {data_res.text}")
         sys.exit(1)
 
-    json_data = data_res.json()
-    df = pd.json_normalize(json_data)
+    raw_json = data_res.json()
+    
+    # Handle direct root-level arrays vs nested objects
+    if isinstance(raw_json, dict) and "data" in raw_json:
+        df = pd.json_normalize(raw_json["data"])
+    else:
+        df = pd.json_normalize(raw_json)
+
     df.to_csv("fuel_prices.csv", index=False)
-    print(f"Successfully saved {len(df)} records to fuel_prices.csv!")
+    print(f"Successfully exported {len(df)} records to fuel_prices.csv!")
 
 except Exception as err:
     print(f"Execution Error: {err}")
