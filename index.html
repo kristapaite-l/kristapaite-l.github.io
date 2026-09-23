@@ -5,10 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Laura Kristapaite | Data Analyst Portfolio</title>
 <!-- FAVICON CODE (Option 3: Abstract Analysis) -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%238c1d40'/><path d='M30 30 C30 50, 50 30, 50 50 C50 70, 70 50, 70 70 M30 70 C50 70, 50 50, 70 50' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' fill='none'/><circle cx='50' cy='50' r='8' fill='%23ffffff'/></svg>"><!-- Google Fonts for Editorial Data Journalism Theme -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%238c1d40'/><path d='M30 30 C30 50, 50 30, 50 50 C50 70, 70 50, 70 70 M30 70 C50 70, 50 50, 70 50' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' fill='none'/><circle cx='50' cy='50' r='8' fill='%23ffffff'/></svg>">
+<!-- Google Fonts for Editorial Data Journalism Theme -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Leaflet CSS for Map Component -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 <style>
 :root {
   --bg: #fbf9f5;
@@ -58,7 +63,7 @@ nav {
   background: rgba(251, 249, 245, 0.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
-  z-index: 10;
+  z-index: 1000;
 }
 
 .nav {
@@ -267,6 +272,98 @@ section {
   text-decoration: underline;
 }
 
+/* Map Container Component */
+#map {
+  height: 600px;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  z-index: 1;
+}
+
+/* Custom Leaflet Popup Styling integrated into design system */
+.leaflet-popup-content-wrapper {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--line);
+  font-family: var(--font-sans);
+}
+
+.popup-container {
+  padding: 6px 4px;
+  font-size: 13px;
+  min-width: 210px;
+}
+
+.popup-title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--accent);
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+
+.popup-brand {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.popup-address {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.price-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: var(--bg-subtle);
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.price-card {
+  text-align: center;
+}
+
+.price-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.price-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.badge-bar {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-size: 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
 .about {
   display: grid;
   grid-template-columns: 0.75fr 1.25fr;
@@ -371,6 +468,7 @@ footer {
     <div class="brand">Laura Kristapaite</div>
     <div class="links">
       <a href="#projects">Projects</a>
+      <a href="#map-section">Fuel Map</a>
       <a href="#about">About</a>
       <a href="#cv">CV</a>
       <a href="#contact">Contact</a>
@@ -401,8 +499,19 @@ footer {
         <div>
           <div class="eyebrow">Selected work</div>
           <h2>Projects</h2>
+        </div>
       </div>
       <div class="grid">
+        <article class="card">
+          <div>
+            <span class="tag">Leaflet.js</span><span class="tag">GOV.UK Schema</span><span class="tag">Data Mapping</span>
+            <h3>Interactive UK Fuel Price Map</h3>
+            <p>Parses official GOV.UK forecourt dataset schema dynamically. Features geographic coordinate mapping, fuel price tracking (E10/B7), and service availability indicators.</p>
+          </div>
+          <div class="bottom">
+            <a class="text-link" href="#map-section">View interactive map ↓</a>
+          </div>
+        </article>
         <article class="card">
           <div>
             <span class="tag">SQL</span><span class="tag">Analysis</span>
@@ -433,17 +542,21 @@ footer {
             <a class="text-link" href="#">View case study →</a>
           </div>
         </article>
-        <article class="card">
-          <div>
-            <span class="tag">Data quality</span><span class="tag">Insights</span>
-            <h3>Data Quality Investigation</h3>
-            <p>Profiled a complex dataset, identified inconsistencies and documented practical checks to improve confidence in downstream reporting.</p>
-          </div>
-          <div class="bottom">
-            <a class="text-link" href="#">View case study →</a>
-          </div>
-        </article>
       </div>
+    </div>
+  </section>
+
+  <!-- Interactive Map Section -->
+  <section id="map-section">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Live Visualisation</div>
+          <h2>UK Forecourt Fuel Finder</h2>
+        </div>
+        <p>Dynamic data mapping pipeline parsing extracted GOV.UK forecourt schema records into an interactive Leaflet geospatial view.</p>
+      </div>
+      <div id="map"></div>
     </div>
   </section>
 
@@ -507,6 +620,87 @@ footer {
   <span>© 2026 Laura Kristapaite</span>
   <span>Data Analyst Portfolio</span>
 </footer>
+
+<!-- Leaflet and PapaParse Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script>
+  // Initialize map centered on the UK
+  const map = L.map('map').setView([54.0, -2.5], 6);
+
+  // CartoDB Postron basemap (clean aesthetic matching editorial site)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  }).addTo(map);
+
+  // Load and parse CSV file
+  Papa.parse('data/fuel_prices.csv', {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      const bounds = [];
+
+      results.data.forEach(row => {
+        // Extract lat / lng dynamically from nested header paths
+        const lat = parseFloat(row['forecourts.location.latitude']);
+        const lng = parseFloat(row['forecourts.location.longitude']);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const name = row['forecourts.trading_name'] || 'Fuel Station';
+          const brand = row['forecourts.brand_name'] || '';
+          const addr1 = row['forecourts.location.address_line_1'] || '';
+          const city = row['forecourts.location.city'] || '';
+          const postcode = row['forecourts.location.postcode'] || '';
+
+          // Fuel prices
+          const e10 = row['forecourts.fuel_price.E10'] ? `${row['forecourts.fuel_price.E10']}p` : 'N/A';
+          const b7s = row['forecourts.fuel_price.B7S'] ? `${row['forecourts.fuel_price.B7S']}p` : 'N/A';
+
+          // Facilities & features
+          const is24hr = row['forecourts.amenities.twenty_four_hour_fuel'] === 'true';
+          const carWash = row['forecourts.amenities.vehicle_services.car_wash'] === 'true';
+          const isSupermarket = row['forecourts.is_supermarket_service_station'] === 'true';
+
+          const popupContent = `
+            <div class="popup-container">
+              <div class="popup-title">${name}</div>
+              <div class="popup-brand">${brand}</div>
+              <div class="popup-address">${addr1}${city ? ', ' + city : ''}<br>${postcode}</div>
+              
+              <div class="price-grid">
+                <div class="price-card">
+                  <div class="price-label">E10 Petrol</div>
+                  <div class="price-val">${e10}</div>
+                </div>
+                <div class="price-card">
+                  <div class="price-label">B7 Diesel</div>
+                  <div class="price-val">${b7s}</div>
+                </div>
+              </div>
+
+              <div class="badge-bar">
+                ${is24hr ? '<span class="badge">24 Hours</span>' : ''}
+                ${carWash ? '<span class="badge">Car Wash</span>' : ''}
+                ${isSupermarket ? '<span class="badge">Supermarket</span>' : ''}
+              </div>
+            </div>
+          `;
+
+          L.marker([lat, lng]).addTo(map).bindPopup(popupContent);
+          bounds.push([lat, lng]);
+        }
+      });
+
+      // Fit map viewport to geographic extent of loaded markers
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }
+  });
+</script>
 
 </body>
 </html>
