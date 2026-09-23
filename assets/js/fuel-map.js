@@ -1,100 +1,186 @@
-// Define geographic boundaries for the UK to prevent zooming out into the world
+// Define geographic boundaries for the UK
 const ukBounds = L.latLngBounds(
   L.latLng(49.8, -8.5), // South West
   L.latLng(60.9, 1.8)   // North East
 );
 
-// Initialize map limited to UK bounds
+// Initialize map centered on UK without default markers
 const map = L.map('map', {
   maxBounds: ukBounds,
   maxBoundsViscosity: 1.0,
   minZoom: 5
 }).setView([54.0, -2.5], 6);
 
-// OpenStreetMap tiles (no API key required)
+// OpenStreetMap base tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 18,
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-// Load and parse CSV dataset
+// Store raw dataset and active map markers layer group
+let allStations = [];
+const markerGroup = L.layerGroup().addTo(map);
+
+// Parse CSV once on page load
 Papa.parse('../../data/fuel_prices.csv', {
   download: true,
   header: true,
   skipEmptyLines: true,
   complete: function(results) {
-    const bounds = [];
-
-    results.data.forEach(row => {
+    allStations = results.data.filter(row => {
       const lat = parseFloat(row['forecourts.location.latitude']);
       const lng = parseFloat(row['forecourts.location.longitude']);
-
-      if (!isNaN(lat) && !isNaN(lng)) {
-        const name = row['forecourts.trading_name'] || 'Fuel Station';
-        const brand = row['forecourts.brand_name'] || '';
-        const addr1 = row['forecourts.location.address_line_1'] || '';
-        const city = row['forecourts.location.city'] || '';
-        const postcode = row['forecourts.location.postcode'] || '';
-
-        const e10 = row['forecourts.fuel_price.E10'] ? `${row['forecourts.fuel_price.E10']}p` : 'N/A';
-        const b7s = row['forecourts.fuel_price.B7S'] ? `${row['forecourts.fuel_price.B7S']}p` : 'N/A';
-
-        const is24hr = row['forecourts.amenities.twenty_four_hour_fuel'] === 'true';
-        const carWash = row['forecourts.amenities.vehicle_services.car_wash'] === 'true';
-        const isSupermarket = row['forecourts.is_supermarket_service_station'] === 'true';
-
-        const popupContent = `
-          <div class="popup-container">
-            <div class="popup-title">${name}</div>
-            <div class="popup-brand">${brand}</div>
-            <div class="popup-address">${addr1}${city ? ', ' + city : ''}<br>${postcode}</div>
-            
-            <div class="price-grid">
-              <div class="price-card">
-                <div class="price-label">E10 Petrol</div>
-                <div class="price-val">${e10}</div>
-              </div>
-              <div class="price-card">
-                <div class="price-label">B7 Diesel</div>
-                <div class="price-val">${b7s}</div>
-              </div>
-            </div>
-
-            <div class="badge-bar">
-              ${is24hr ? '<span class="badge">24 Hours</span>' : ''}
-              ${carWash ? '<span class="badge">Car Wash</span>' : ''}
-              ${isSupermarket ? '<span class="badge">Supermarket</span>' : ''}
-            </div>
-          </div>
-        `;
-
-        L.marker([lat, lng]).addTo(map).bindPopup(popupContent);
-        bounds.push([lat, lng]);
-      }
+      return !isNaN(lat) && !isNaN(lng);
     });
-
-    if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
   }
 });
 
-// Postcode Search Functionality
-async function searchPostcode() {
-  const query = document.getElementById('postcode-input').value.trim();
+// Calculate distance in km between two lat/lng points (Haversine formula)
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+// Format price value safely to 1 decimal place
+function formatPrice(val) {
+  if (!val || isNaN(val)) return null;
+  return parseFloat(val).toFixed(1);
+}
+
+// Search location (Postcode or Place Name)
+async function searchLocation() {
+  const query = document.getElementById('location-input').value.trim();
   if (!query) return;
 
-  try {
-    const response = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(query)}`);
-    const data = await response.json();
+  let lat, lng;
 
-    if (data.status === 200) {
-      const { latitude, longitude } = data.result;
-      map.setView([latitude, longitude], 13);
-    } else {
-      alert('Postcode not found. Please enter a valid UK postcode.');
+  // 1. Try UK Postcode lookup first
+  try {
+    const pcRes = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(query)}`);
+    const pcData = await pcRes.json();
+    if (pcData.status === 200) {
+      lat = pcData.result.latitude;
+      lng = pcData.result.longitude;
     }
-  } catch (error) {
-    alert('Error locating postcode. Please try again.');
+  } catch (e) {
+    // Ignore and fallback to place lookup
   }
+
+  // 2. Fallback to OpenStreetMap Nominatim for town/city names
+  if (!lat || !lng) {
+    try {
+      const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=gb&q=${encodeURIComponent(query)}`);
+      const geoData = await geoRes.json();
+      if (geoData && geoData.length > 0) {
+        lat = parseFloat(geoData[0].lat);
+        lng = parseFloat(geoData[0].lon);
+      }
+    } catch (e) {
+      alert('Search failed. Please try again.');
+      return;
+    }
+  }
+
+  if (!lat || !lng) {
+    alert('Location or postcode not found. Please try a valid UK city, town, or postcode.');
+    return;
+  }
+
+  renderNearbyStations(lat, lng);
+}
+
+// Render nearby stations with price annotations and high/low formatting
+function renderNearbyStations(centerLat, centerLng) {
+  markerGroup.clearLayers();
+
+  // Find stations within ~12km radius of searched location
+  const searchRadiusKm = 12;
+  const nearby = allStations.map(station => {
+    const sLat = parseFloat(station['forecourts.location.latitude']);
+    const sLng = parseFloat(station['forecourts.location.longitude']);
+    const dist = getDistanceKm(centerLat, centerLng, sLat, sLng);
+    const e10Val = parseFloat(station['forecourts.fuel_price.E10']);
+    return { ...station, sLat, sLng, dist, e10Val };
+  }).filter(s => s.dist <= searchRadiusKm);
+
+  if (nearby.length === 0) {
+    alert('No fuel stations found near this location in the dataset.');
+    map.setView([centerLat, centerLng], 12);
+    return;
+  }
+
+  // Calculate high and low E10 prices in local area for conditional formatting
+  const validPrices = nearby.map(s => s.e10Val).filter(p => !isNaN(p));
+  const minPrice = validPrices.length ? Math.min(...validPrices) : null;
+  const maxPrice = validPrices.length ? Math.max(...validPrices) : null;
+
+  const bounds = [];
+
+  nearby.forEach(s => {
+    const name = s['forecourts.trading_name'] || 'Fuel Station';
+    const brand = s['forecourts.brand_name'] || '';
+    const addr1 = s['forecourts.location.address_line_1'] || '';
+    const city = s['forecourts.location.city'] || '';
+    const postcode = s['forecourts.location.postcode'] || '';
+
+    const e10Formatted = formatPrice(s['forecourts.fuel_price.E10']);
+    const b7Formatted = formatPrice(s['forecourts.fuel_price.B7S']);
+
+    const e10Display = e10Formatted ? `${e10Formatted}p` : 'N/A';
+    const b7Display = b7Formatted ? `${b7Formatted}p` : 'N/A';
+
+    // Determine conditional color class
+    let priceClass = 'price-mid';
+    if (s.e10Val && minPrice !== null && maxPrice !== null && minPrice !== maxPrice) {
+      if (s.e10Val === minPrice) priceClass = 'price-low';
+      else if (s.e10Val === maxPrice) priceClass = 'price-high';
+    }
+
+    // Custom map pin icon displaying rounded price
+    const customIcon = L.divIcon({
+      className: 'custom-price-pin',
+      html: `<div class="marker-pill ${priceClass}">${e10Display}</div>`,
+      iconSize: [60, 26],
+      iconAnchor: [30, 13]
+    });
+
+    const is24hr = s['forecourts.amenities.twenty_four_hour_fuel'] === 'true';
+    const carWash = s['forecourts.amenities.vehicle_services.car_wash'] === 'true';
+    const isSupermarket = s['forecourts.is_supermarket_service_station'] === 'true';
+
+    const popupContent = `
+      <div class="popup-container">
+        <div class="popup-title">${name}</div>
+        <div class="popup-brand">${brand}</div>
+        <div class="popup-address">${addr1}${city ? ', ' + city : ''}<br>${postcode}</div>
+        
+        <div class="price-grid">
+          <div class="price-card">
+            <div class="price-label">E10 Petrol</div>
+            <div class="price-val">${e10Display}</div>
+          </div>
+          <div class="price-card">
+            <div class="price-label">B7 Diesel</div>
+            <div class="price-val">${b7Display}</div>
+          </div>
+        </div>
+
+        <div class="badge-bar">
+          ${is24hr ? '<span class="badge">24 Hours</span>' : ''}
+          ${carWash ? '<span class="badge">Car Wash</span>' : ''}
+          ${isSupermarket ? '<span class="badge">Supermarket</span>' : ''}
+        </div>
+      </div>
+    `;
+
+    L.marker([s.sLat, s.sLng], { icon: customIcon }).addTo(markerGroup).bindPopup(popupContent);
+    bounds.push([s.sLat, s.sLng]);
+  });
+
+  map.fitBounds(bounds, { padding: [50, 50] });
 }

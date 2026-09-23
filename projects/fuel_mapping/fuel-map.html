@@ -24,6 +24,10 @@
   --max: 1080px;
   --font-serif: "Newsreader", Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  
+  --price-low: #1e7e34;
+  --price-mid: #8c1d40;
+  --price-high: #bd2130;
 }
 
 * { box-sizing: border-box; }
@@ -50,13 +54,37 @@ nav { position: sticky; top: 0; background: rgba(251, 249, 245, 0.92); backdrop-
 .eyebrow { text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.75rem; color: var(--accent); font-weight: 800; }
 h1 { font-family: var(--font-serif); font-weight: 600; font-size: 2.5rem; margin: 8px 0 16px; }
 
-.controls-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-.search-input { padding: 10px 16px; border: 1px solid var(--line); border-radius: 999px; font-family: var(--font-sans); font-size: 0.9rem; width: 280px; background: var(--card); outline: none; }
+.controls-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.search-input { padding: 10px 16px; border: 1px solid var(--line); border-radius: 999px; font-family: var(--font-sans); font-size: 0.9rem; width: 320px; background: var(--card); outline: none; }
 .search-input:focus { border-color: var(--accent); }
-.btn-search { padding: 10px 20px; border-radius: 999px; background: var(--accent); color: white; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
+.btn-search { padding: 10px 22px; border-radius: 999px; background: var(--accent); color: white; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
 .btn-search:hover { background: var(--accent-hover); }
 
-/* Map */
+/* Legend for Price Indicators */
+.legend-bar { display: flex; gap: 16px; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 20px; }
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legend-dot.low { background: var(--price-low); }
+.legend-dot.mid { background: var(--price-mid); }
+.legend-dot.high { background: var(--price-high); }
+
+/* Custom Price Marker Pill Styling */
+.marker-pill {
+  color: white;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  border: 1.5px solid white;
+  white-space: nowrap;
+}
+.marker-pill.price-low { background: var(--price-low); }
+.marker-pill.price-mid { background: var(--price-mid); }
+.marker-pill.price-high { background: var(--price-high); }
+
+/* Map Container */
 #map { height: 650px; width: 100%; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 60px; }
 
 /* Custom Leaflet Popup Styles */
@@ -98,11 +126,17 @@ footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex
   <div class="page-header">
     <div class="eyebrow">Live Visualisation</div>
     <h1>UK Forecourt Fuel Finder</h1>
-    <p>Interactive mapping project parsing GOV.UK forecourt schemas using Leaflet.js and PapaParse.</p>
+    <p>Search any UK town, city, or postcode to compare live local E10 fuel prices.</p>
     
     <div class="controls-bar">
-      <input type="text" id="postcode-input" class="search-input" placeholder="Enter UK Postcode (e.g. NP4 6JU)">
-      <button onclick="searchPostcode()" class="btn-search">Search Area</button>
+      <input type="text" id="location-input" class="search-input" placeholder="Enter town or postcode (e.g. London, NP4 6JU)" onkeypress="if(event.key === 'Enter') searchLocation()">
+      <button onclick="searchLocation()" class="btn-search">Search Location</button>
+    </div>
+
+    <div class="legend-bar">
+      <div class="legend-item"><span class="legend-dot low"></span> Lowest Local Price</div>
+      <div class="legend-item"><span class="legend-dot mid"></span> Standard Price</div>
+      <div class="legend-item"><span class="legend-dot high"></span> Highest Local Price</div>
     </div>
   </div>
 
