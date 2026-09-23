@@ -26,8 +26,7 @@ Papa.parse('../../data/fuel_prices.csv', {
   download: true,
   header: true,
   skipEmptyLines: true,
-  complete: function(results, file) {
-    // Process station data
+  complete: function(results) {
     allStations = results.data.filter(row => {
       const lat = parseFloat(row['forecourts.location.latitude']);
       const lng = parseFloat(row['forecourts.location.longitude']);
@@ -61,6 +60,16 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
 function formatPrice(val) {
   if (!val || isNaN(val)) return null;
   return parseFloat(val).toFixed(1);
+}
+
+// Get dynamic background color based on position in price spectrum (0 to 1)
+function getGradientColor(ratio) {
+  // Color spectrum from lowest (green) to highest (dark red)
+  if (ratio <= 0.25) return '#1e7e34'; // Green (Lowest)
+  if (ratio <= 0.50) return '#28a745'; // Light Green
+  if (ratio <= 0.75) return '#fd7e14'; // Orange
+  if (ratio < 1.00)  return '#dc3545'; // Red
+  return '#8b0000';                   // Dark Red (Highest)
 }
 
 // Location Search Handler (Postcode or Place Name)
@@ -143,15 +152,18 @@ function renderNearbyStations(centerLat, centerLng) {
     const e10Display = e10Formatted ? `${e10Formatted}p` : 'N/A';
     const b7Display = b7Formatted ? `${b7Formatted}p` : 'N/A';
 
-    let priceClass = 'price-mid';
-    if (s.e10Val && minPrice !== null && maxPrice !== null && minPrice !== maxPrice) {
-      if (s.e10Val === minPrice) priceClass = 'price-low';
-      else if (s.e10Val === maxPrice) priceClass = 'price-high';
+    // Calculate relative price ratio (0 = cheapest in area, 1 = most expensive in area)
+    let markerColor = '#8c1d40';
+    if (s.e10Val && minPrice !== null && maxPrice !== null && maxPrice > minPrice) {
+      const ratio = (s.e10Val - minPrice) / (maxPrice - minPrice);
+      markerColor = getGradientColor(ratio);
+    } else if (s.e10Val && minPrice === maxPrice) {
+      markerColor = '#1e7e34'; // All stations equal price
     }
 
     const customIcon = L.divIcon({
       className: 'custom-price-pin',
-      html: `<div class="marker-pill ${priceClass}">${e10Display}</div>`,
+      html: `<div class="marker-pill" style="background-color: ${markerColor};">${e10Display}</div>`,
       iconSize: [60, 26],
       iconAnchor: [30, 13]
     });
