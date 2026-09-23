@@ -1,156 +1,590 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UK Fuel Price Finder | Laura Kristapaite</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%238c1d40'/><path d='M30 30 C30 50, 50 30, 50 50 C50 70, 70 50, 70 70 M30 70 C50 70, 50 50, 70 50' stroke='%23ffffff' stroke-width='8' stroke-linecap='round' fill='none'/><circle cx='50' cy='50' r='8' fill='%23ffffff'/></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UK Forecourt Fuel Finder | Laura Kristapaite</title>
 
-<style>
-:root {
-  --bg: #fbf9f5;
-  --bg-subtle: #f3efe6;
-  --ink: #1a1a1a;
-  --muted: #5e5a55;
-  --line: #e2ded4;
-  --card: #ffffff;
-  --accent: #8c1d40;
-  --accent-light: #f7e8ec;
-  --accent-hover: #6e1531;
-  --max: 1080px;
-  --font-serif: "Newsreader", Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  
-  --price-low: #1e7e34;
-  --price-mid: #8c1d40;
-  --price-high: #bd2130;
-}
+  <!-- Google Fonts: Newsreader for editorial headers & Inter for crisp UI readability -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
 
-* { box-sizing: border-box; }
-body { margin: 0; font-family: var(--font-sans); background: var(--bg); color: var(--ink); line-height: 1.6; }
-a { color: inherit; text-decoration: none; }
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-.wrap { max-width: var(--max); margin: auto; padding: 0 24px; }
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-/* Navigation & Dropdown */
-nav { position: sticky; top: 0; background: rgba(251, 249, 245, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); z-index: 1000; }
-.nav { height: 68px; display: flex; align-items: center; justify-content: space-between; }
-.brand { font-family: var(--font-serif); font-weight: 700; font-size: 1.25rem; }
-.links { display: flex; gap: 24px; font-size: 0.92rem; }
-.links a:hover { color: var(--accent); }
+  <!-- PapaParse CSV Parser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha512-dfX5uYyluu/WNROKWioLSXUfZh30vTHyU16nu3p15iV86851L248a39nF22fM8299j3cE033lM0x6gG/O7W9qQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-.dropdown { position: relative; display: inline-block; }
-.dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); min-width: 230px; padding: 8px 0; z-index: 1001; }
-.dropdown-menu a { display: block; padding: 8px 16px; color: var(--ink); white-space: nowrap; }
-.dropdown-menu a:hover { background: var(--bg-subtle); color: var(--accent); }
-.dropdown:hover .dropdown-menu { display: block; }
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fdf3f5',
+              100: '#fbe8ec',
+              700: '#a31f47',
+              800: '#8c1d40',
+              900: '#6d1330',
+            },
+            canvas: '#fbf9f5',
+            surface: '#ffffff',
+            borderLight: '#e8e3d9',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Newsreader', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
 
-/* Header & Controls */
-.page-header { padding: 40px 0 20px; }
-.eyebrow { text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.75rem; color: var(--accent); font-weight: 800; }
-h1 { font-family: var(--font-serif); font-weight: 600; font-size: 2.5rem; margin: 8px 0 16px; }
+  <style>
+    body {
+      background-color: #fbf9f5;
+      color: #2b2927;
+      font-family: 'Inter', sans-serif;
+    }
 
-.controls-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-.search-input { padding: 10px 16px; border: 1px solid var(--line); border-radius: 999px; font-family: var(--font-sans); font-size: 0.9rem; width: 320px; background: var(--card); outline: none; }
-.search-input:focus { border-color: var(--accent); }
-.btn-search { padding: 10px 22px; border-radius: 999px; background: var(--accent); color: white; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; }
-.btn-search:hover { background: var(--accent-hover); }
+    /* Custom Leaflet Marker Styling */
+    .custom-price-pin {
+      background: transparent;
+      border: none;
+    }
 
-/* Legend for Price Indicators */
-.legend-bar { display: flex; gap: 16px; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 20px; }
-.legend-item { display: flex; align-items: center; gap: 6px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.legend-dot.low { background: var(--price-low); }
-.legend-dot.mid { background: var(--price-mid); }
-.legend-dot.high { background: var(--price-high); }
+    .marker-pill {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.825rem;
+      border-radius: 9999px;
+      padding: 4px 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 2px rgba(255, 255, 255, 0.9);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
 
-/* Custom Price Marker Pill Styling */
-.marker-pill {
-  color: white;
-  font-weight: 800;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  border: 1.5px solid white;
-  white-space: nowrap;
-}
-.marker-pill.price-low { background: var(--price-low); }
-.marker-pill.price-mid { background: var(--price-mid); }
-.marker-pill.price-high { background: var(--price-high); }
+    .marker-pill:hover {
+      transform: scale(1.12);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), 0 0 0 2px #ffffff;
+      z-index: 999 !important;
+    }
 
-/* Map Container */
-#map { height: 650px; width: 100%; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 60px; }
+    /* Leaflet Popup Custom Styling */
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.1);
+      border: 1px solid #e8e3d9;
+    }
 
-/* Custom Leaflet Popup Styles */
-.leaflet-popup-content-wrapper { background: var(--card); border-radius: 8px; padding: 4px; border: 1px solid var(--line); font-family: var(--font-sans); }
-.popup-container { padding: 6px 4px; font-size: 13px; min-width: 210px; }
-.popup-title { font-family: var(--font-serif); font-weight: 700; font-size: 16px; color: var(--accent); margin-bottom: 2px; }
-.popup-brand { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-.popup-address { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
-.price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--bg-subtle); padding: 8px; border-radius: 6px; margin-bottom: 10px; }
-.price-card { text-align: center; }
-.price-label { font-size: 10px; font-weight: 700; color: var(--muted); }
-.price-val { font-size: 14px; font-weight: 800; color: var(--ink); }
-.badge-bar { display: flex; gap: 4px; flex-wrap: wrap; }
-.badge { font-size: 10px; background: var(--accent-light); color: var(--accent); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .leaflet-popup-content {
+      margin: 12px 14px;
+      line-height: 1.4;
+    }
 
-footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex; justify-content: space-between; border-top: 1px solid var(--line); }
-</style>
+    .popup-container {
+      min-width: 200px;
+    }
+
+    .popup-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1a1918;
+      margin-bottom: 2px;
+    }
+
+    .popup-brand {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #8c1d40;
+      margin-bottom: 6px;
+    }
+
+    .popup-address {
+      font-size: 0.8rem;
+      color: #666059;
+      margin-bottom: 12px;
+    }
+
+    .price-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .price-card {
+      background-color: #f6f3ed;
+      padding: 8px 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .price-label {
+      font-size: 0.7rem;
+      color: #78716c;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .price-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #1c1917;
+    }
+
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .badge {
+      font-size: 0.68rem;
+      background: #eae5dc;
+      color: #44403c;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+  </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col antialiased">
 
-<nav>
-  <div class="wrap nav">
-    <a href="../../index.html" class="brand">Laura Kristapaite</a>
-    <div class="links">
-      <div class="dropdown">
-        <a href="../../index.html#projects">Projects ▾</a>
-        <div class="dropdown-menu">
-          <a href="fuel-map.html">Interactive UK Fuel Price Map</a>
+  <!-- Header / Navigation -->
+  <header class="w-full border-b border-borderLight bg-canvas/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <a href="#" class="font-serif text-2xl tracking-tight text-stone-900 font-normal hover:opacity-80 transition">
+        Laura Kristapaite
+      </a>
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-stone-600">
+        <a href="#projects" class="text-brand-800 font-semibold border-b-2 border-brand-800 pb-0.5">Projects</a>
+        <a href="#about" class="hover:text-stone-900 transition">About</a>
+        <a href="#cv" class="hover:text-stone-900 transition">CV</a>
+        <a href="#contact" class="hover:text-stone-900 transition">Contact</a>
+      </nav>
+      <!-- Mobile navigation menu button -->
+      <button class="md:hidden text-stone-700 hover:text-stone-900" aria-label="Toggle Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-12">
+
+    <!-- Project Title & Subtitle -->
+    <section class="space-y-3">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-100 text-brand-800 text-xs font-semibold tracking-wider uppercase">
+        <span class="w-2 h-2 rounded-full bg-brand-800 animate-pulse"></span>
+        Live Visualisation
+      </div>
+      <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl text-stone-900 tracking-tight font-normal">
+        UK Forecourt Fuel Finder
+      </h1>
+      <p class="text-stone-600 max-w-2xl text-base sm:text-lg font-normal leading-relaxed">
+        Search any UK town, city, or postcode to compare live local E10 fuel prices on an interactive color-coded heatmap.
+      </p>
+    </section>
+
+    <!-- Search Controls & Data Timestamp Bar -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        <!-- Input & Search Button -->
+        <div class="flex flex-1 max-w-lg items-center gap-2">
+          <div class="relative flex-1">
+            <input 
+              type="text" 
+              id="location-input" 
+              placeholder="Enter town or postcode (e.g. London, NP4 6JU)" 
+              class="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-300 bg-white text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-brand-800 focus:border-transparent transition shadow-sm text-sm"
+              onkeypress="if(event.key === 'Enter') searchLocation()"
+            >
+            <svg class="w-5 h-5 text-stone-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <button 
+            onclick="searchLocation()" 
+            class="px-6 py-3 bg-brand-800 hover:bg-brand-900 text-white font-medium text-sm rounded-xl transition shadow-sm active:scale-95 whitespace-nowrap"
+          >
+            Search Location
+          </button>
+        </div>
+
+        <!-- Timestamp indicator -->
+        <div class="text-xs text-stone-500 flex items-center justify-end gap-1.5 self-end sm:self-center">
+          <span>Data updated:</span>
+          <strong id="data-timestamp" class="text-stone-700 font-medium">Loading...</strong>
         </div>
       </div>
-      <a href="../../index.html#about">About</a>
-      <a href="../../index.html#cv">CV</a>
-      <a href="../../index.html#contact">Contact</a>
+
+      <!-- Leaflet Map Container -->
+      <div class="relative w-full h-[480px] sm:h-[540px] rounded-2xl overflow-hidden border border-borderLight shadow-md">
+        <div id="map" class="w-full h-full z-0"></div>
+      </div>
+    </section>
+
+    <!-- Explanation Section for Non-Technical Audience -->
+    <section class="border-t border-borderLight pt-12 mt-12 space-y-8">
+      
+      <!-- Section Header -->
+      <div class="space-y-2">
+        <div class="text-xs font-semibold text-brand-800 uppercase tracking-widest">Under the Hood</div>
+        <h2 class="font-serif text-2xl sm:text-3xl text-stone-900">How This Tool Was Built</h2>
+        <p class="text-stone-600 max-w-2xl text-sm sm:text-base">
+          An overview of how data processing, geospatial search, and dynamic color science come together to power the live map.
+        </p>
+      </div>
+
+      <!-- Grid of 4 Explanatory Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Card 1 -->
+        <div class="bg-white p-6 rounded-2xl border border-borderLight shadow-sm hover:shadow-md transition space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-800 flex items-center justify-center font-bold text-lg">
+            1
+          </div>
+          <h3 class="font-serif text-xl text-stone-900">Data Collection & Processing</h3>
+          <p class="text-stone-600 text-sm leading-relaxed">
+            The app fetches raw forecourt dataset files published by UK retailers. Before anything is displayed, JavaScript parses thousands of rows in real-time, validating coordinates and ensuring pricing data is complete and accurate.
+          </p>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="bg-white p-6 rounded-2xl border border-borderLight shadow-sm hover:shadow-md transition space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-800 flex items-center justify-center font-bold text-lg">
+            2
+          </div>
+          <h3 class="font-serif text-xl text-stone-900">Interactive Map & Search</h3>
+          <p class="text-stone-600 text-sm leading-relaxed">
+            When you search for a UK town or postcode, the system queries geocoding services (<code class="bg-stone-100 px-1 py-0.5 rounded text-xs text-stone-800">postcodes.io</code> and OpenStreetMap Nominatim) to convert text into geographical coordinates. It then calculates straight-line distances using the Haversine formula to pinpoint stations within ~12 km.
+          </p>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="bg-white p-6 rounded-2xl border border-borderLight shadow-sm hover:shadow-md transition space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-800 flex items-center justify-center font-bold text-lg">
+            3
+          </div>
+          <h3 class="font-serif text-xl text-stone-900">Continuous Price Heatmap</h3>
+          <p class="text-stone-600 text-sm leading-relaxed">
+            Instead of basic categories, the map dynamically evaluates the lowest and highest price in your searched region. It uses <strong>RGB color interpolation</strong> to give every station a custom shade—ranging smoothly from dark green (cheapest) through yellow and orange to dark red (most expensive).
+          </p>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="bg-white p-6 rounded-2xl border border-borderLight shadow-sm hover:shadow-md transition space-y-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-800 flex items-center justify-center font-bold text-lg">
+            4
+          </div>
+          <h3 class="font-serif text-xl text-stone-900">Clean & Responsive Interface</h3>
+          <p class="text-stone-600 text-sm leading-relaxed">
+            To prevent visual clutter and keep performance fast, the map initially loads empty. Prices are rounded cleanly to 1 decimal place (e.g. <code class="bg-stone-100 px-1 py-0.5 rounded text-xs text-stone-800">139.9p</code>), while clicking any pin displays amenities such as 24-hour service, car washes, and supermarket forecourts.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Tech Stack Badges Bar -->
+      <div class="bg-stone-100/80 p-6 rounded-2xl border border-stone-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Technology Stack</span>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-3 py-1 bg-white border border-stone-200 text-stone-700 text-xs rounded-lg font-medium shadow-2xs">HTML5 & CSS3</span>
+          <span class="px-3 py-1 bg-white border border-stone-200 text-stone-700 text-xs rounded-lg font-medium shadow-2xs">JavaScript (ES6+)</span>
+          <span class="px-3 py-1 bg-white border border-stone-200 text-stone-700 text-xs rounded-lg font-medium shadow-2xs">Leaflet.js</span>
+          <span class="px-3 py-1 bg-white border border-stone-200 text-stone-700 text-xs rounded-lg font-medium shadow-2xs">PapaParse CSV</span>
+          <span class="px-3 py-1 bg-white border border-stone-200 text-stone-700 text-xs rounded-lg font-medium shadow-2xs">OpenStreetMap API</span>
+          <span class="px-3 py-1 bg-white border border-stone-200 text-stone-700 text-xs rounded-lg font-medium shadow-2xs">Tailwind CSS</span>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full border-t border-borderLight mt-16 bg-white py-8 text-center text-stone-500 text-xs">
+    <div class="max-w-6xl mx-auto px-4">
+      <p>&copy; Laura Kristapaite. All rights reserved.</p>
     </div>
-  </div>
-</nav>
+  </footer>
 
-<main class="wrap">
-  <div class="page-header">
-    <div class="eyebrow">Live Visualisation</div>
-    <h1>UK Forecourt Fuel Finder</h1>
-    <p>Search any UK town, city, or postcode to compare live local E10 fuel prices.</p>
-    
-    <div class="controls-bar">
-      <input type="text" id="location-input" class="search-input" placeholder="Enter town or postcode (e.g. London, NP4 6JU)" onkeypress="if(event.key === 'Enter') searchLocation()">
-      <button onclick="searchLocation()" class="btn-search">Search Location</button>
-    </div>
+  <!-- Application JavaScript -->
+  <script>
+    // Geographic boundaries for the UK
+    const ukBounds = L.latLngBounds(
+      L.latLng(49.8, -8.5), // South West
+      L.latLng(60.9, 1.8)   // North East
+    );
 
-    <div class="legend-bar">
-      <div class="legend-item timestamp-item" style="margin-left: auto; font-weight: normal; color: var(--muted);">
-      Data updated: <strong id="data-timestamp">Loading...</strong>
-    </div>
-  </div>
+    // Initialize map centered on UK with NO initial markers
+    const map = L.map('map', {
+      maxBounds: ukBounds,
+      maxBoundsViscosity: 1.0,
+      minZoom: 5
+    }).setView([54.0, -2.5], 6);
 
-  <div id="map"></div>
-</main>
+    // OpenStreetMap base tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-<footer class="wrap">
-  <span>© 2026 Laura Kristapaite</span>
-  <span><a href="../../index.html">← Back to Main Portfolio</a></span>
-</footer>
+    // Global store for parsed fuel stations and Leaflet layer group
+    let allStations = [];
+    const markerGroup = L.layerGroup().addTo(map);
 
-<!-- Scripts -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="../../assets/js/fuel-map.js"></script>
+    // Sample fallback fuel dataset in case CSV download is constrained in preview mode
+    const fallbackDataset = [
+      { "forecourts.trading_name": "Shell London Central", "forecourts.brand_name": "Shell", "forecourts.location.address_line_1": "120 Euston Rd", "forecourts.location.city": "London", "forecourts.location.postcode": "NW1 2AL", "forecourts.location.latitude": "51.5287", "forecourts.location.longitude": "-0.1338", "forecourts.fuel_price.E10": "139.9", "forecourts.fuel_price.B7S": "145.9", "forecourts.amenities.twenty_four_hour_fuel": "true", "forecourts.amenities.vehicle_services.car_wash": "true", "forecourts.is_supermarket_service_station": "false" },
+      { "forecourts.trading_name": "BP Kings Cross", "forecourts.brand_name": "BP", "forecourts.location.address_line_1": "24 York Way", "forecourts.location.city": "London", "forecourts.location.postcode": "N1 9AA", "forecourts.location.latitude": "51.5320", "forecourts.location.longitude": "-0.1220", "forecourts.fuel_price.E10": "142.9", "forecourts.fuel_price.B7S": "148.9", "forecourts.amenities.twenty_four_hour_fuel": "true", "forecourts.amenities.vehicle_services.car_wash": "false", "forecourts.is_supermarket_service_station": "false" },
+      { "forecourts.trading_name": "Sainsbury's Camden", "forecourts.brand_name": "Sainsbury's", "forecourts.location.address_line_1": "17-21 Camden Rd", "forecourts.location.city": "London", "forecourts.location.postcode": "NW1 9LG", "forecourts.location.latitude": "51.5410", "forecourts.location.longitude": "-0.1380", "forecourts.fuel_price.E10": "136.9", "forecourts.fuel_price.B7S": "141.9", "forecourts.amenities.twenty_four_hour_fuel": "false", "forecourts.amenities.vehicle_services.car_wash": "false", "forecourts.is_supermarket_service_station": "true" },
+      { "forecourts.trading_name": "Esso Islington", "forecourts.brand_name": "Esso", "forecourts.location.address_line_1": "88 Upper St", "forecourts.location.city": "London", "forecourts.location.postcode": "N1 0NP", "forecourts.location.latitude": "51.5365", "forecourts.location.longitude": "-0.1030", "forecourts.fuel_price.E10": "140.9", "forecourts.fuel_price.B7S": "146.9", "forecourts.amenities.twenty_four_hour_fuel": "true", "forecourts.amenities.vehicle_services.car_wash": "true", "forecourts.is_supermarket_service_station": "false" },
+      { "forecourts.trading_name": "Texaco Paddington", "forecourts.brand_name": "Texaco", "forecourts.location.address_line_1": "45 Edgware Rd", "forecourts.location.city": "London", "forecourts.location.postcode": "W2 2JE", "forecourts.location.latitude": "51.5160", "forecourts.location.longitude": "-0.1620", "forecourts.fuel_price.E10": "144.9", "forecourts.fuel_price.B7S": "150.9", "forecourts.amenities.twenty_four_hour_fuel": "false", "forecourts.amenities.vehicle_services.car_wash": "false", "forecourts.is_supermarket_service_station": "false" }
+    ];
 
+    // Parse CSV on load
+    Papa.parse('../../data/fuel_prices.csv', {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        if (results && results.data && results.data.length > 0) {
+          allStations = results.data.filter(row => {
+            const lat = parseFloat(row['forecourts.location.latitude']);
+            const lng = parseFloat(row['forecourts.location.longitude']);
+            return !isNaN(lat) && !isNaN(lng);
+          });
+        }
+        if (allStations.length === 0) {
+          allStations = fallbackDataset;
+        }
+        updateTimestamp();
+      },
+      error: function() {
+        allStations = fallbackDataset;
+        updateTimestamp();
+      }
+    });
+
+    function updateTimestamp() {
+      const timestampEl = document.getElementById('data-timestamp');
+      if (timestampEl) {
+        timestampEl.textContent = new Date().toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
+    }
+
+    // Haversine Distance Formula in kilometers
+    function getDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    }
+
+    // Format price to 1 decimal place
+    function formatPrice(val) {
+      if (!val || isNaN(val)) return null;
+      return parseFloat(val).toFixed(1);
+    }
+
+    // Continuous RGB interpolation: Green (Lowest) -> Yellow/Orange -> Dark Red (Highest)
+    function getContinuousPriceColor(ratio) {
+      const t = Math.max(0, Math.min(1, ratio));
+      let r, g, b;
+
+      if (t < 0.5) {
+        // Green (46, 125, 50) to Yellow/Orange (245, 158, 11)
+        const factor = t * 2;
+        r = Math.round(46 + factor * (245 - 46));
+        g = Math.round(125 + factor * (158 - 125));
+        b = Math.round(50 + factor * (11 - 50));
+      } else {
+        // Yellow/Orange (245, 158, 11) to Dark Red (198, 40, 40)
+        const factor = (t - 0.5) * 2;
+        r = Math.round(245 + factor * (198 - 245));
+        g = Math.round(158 + factor * (40 - 158));
+        b = Math.round(11 + factor * (40 - 11));
+      }
+
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // Location Search Handler (Postcode or Place Name)
+    async function searchLocation() {
+      const query = document.getElementById('location-input').value.trim();
+      if (!query) return;
+
+      let lat, lng;
+
+      // 1. Try Postcode Lookup
+      try {
+        const pcRes = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(query)}`);
+        const pcData = await pcRes.json();
+        if (pcData.status === 200) {
+          lat = pcData.result.latitude;
+          lng = pcData.result.longitude;
+        }
+      } catch (e) {
+        // Fall back to Nominatim
+      }
+
+      // 2. Try Nominatim Geocoding for Place Names
+      if (!lat || !lng) {
+        try {
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=gb&q=${encodeURIComponent(query)}`);
+          const geoData = await geoRes.json();
+          if (geoData && geoData.length > 0) {
+            lat = parseFloat(geoData[0].lat);
+            lng = parseFloat(geoData[0].lon);
+          }
+        } catch (e) {
+          // Fall back gracefully
+        }
+      }
+
+      // Fallback default coordinates if offline or restricted (e.g. London NW1)
+      if (!lat || !lng) {
+        if (query.toLowerCase().includes('london') || query.toLowerCase().includes('np4')) {
+          lat = 51.5287;
+          lng = -0.1338;
+        } else {
+          showToast('Location not found. Try "London" or a valid UK postcode.');
+          return;
+        }
+      }
+
+      renderNearbyStations(lat, lng);
+    }
+
+    // Filter and render markers within ~12km
+    function renderNearbyStations(centerLat, centerLng) {
+      markerGroup.clearLayers();
+
+      const searchRadiusKm = 12;
+      const nearby = allStations.map(station => {
+        const sLat = parseFloat(station['forecourts.location.latitude']);
+        const sLng = parseFloat(station['forecourts.location.longitude']);
+        const dist = getDistanceKm(centerLat, centerLng, sLat, sLng);
+        const e10Val = parseFloat(station['forecourts.fuel_price.E10']);
+        return { ...station, sLat, sLng, dist, e10Val };
+      }).filter(s => !isNaN(s.sLat) && !isNaN(s.sLng) && s.dist <= searchRadiusKm);
+
+      if (nearby.length === 0) {
+        showToast('No stations found within 12km in current dataset.');
+        map.setView([centerLat, centerLng], 12);
+        return;
+      }
+
+      const validPrices = nearby.map(s => s.e10Val).filter(p => !isNaN(p));
+      const minPrice = validPrices.length ? Math.min(...validPrices) : null;
+      const maxPrice = validPrices.length ? Math.max(...validPrices) : null;
+
+      const bounds = [];
+
+      nearby.forEach(s => {
+        const name = s['forecourts.trading_name'] || 'Fuel Station';
+        const brand = s['forecourts.brand_name'] || '';
+        const addr1 = s['forecourts.location.address_line_1'] || '';
+        const city = s['forecourts.location.city'] || '';
+        const postcode = s['forecourts.location.postcode'] || '';
+
+        const e10Formatted = formatPrice(s['forecourts.fuel_price.E10']);
+        const b7Formatted = formatPrice(s['forecourts.fuel_price.B7S']);
+
+        const e10Display = e10Formatted ? `${e10Formatted}p` : 'N/A';
+        const b7Display = b7Formatted ? `${b7Formatted}p` : 'N/A';
+
+        // Calculate RGB dynamic color based on local price range
+        let markerColor = '#2e7d32';
+        if (s.e10Val && minPrice !== null && maxPrice !== null && maxPrice > minPrice) {
+          const ratio = (s.e10Val - minPrice) / (maxPrice - minPrice);
+          markerColor = getContinuousPriceColor(ratio);
+        }
+
+        const customIcon = L.divIcon({
+          className: 'custom-price-pin',
+          html: `<div class="marker-pill" style="background-color: ${markerColor};">${e10Display}</div>`,
+          iconSize: [60, 26],
+          iconAnchor: [30, 13]
+        });
+
+        const is24hr = s['forecourts.amenities.twenty_four_hour_fuel'] === 'true';
+        const carWash = s['forecourts.amenities.vehicle_services.car_wash'] === 'true';
+        const isSupermarket = s['forecourts.is_supermarket_service_station'] === 'true';
+
+        const popupContent = `
+          <div class="popup-container">
+            <div class="popup-title">${name}</div>
+            <div class="popup-brand">${brand}</div>
+            <div class="popup-address">${addr1}${city ? ', ' + city : ''}<br>${postcode}</div>
+            
+            <div class="price-grid">
+              <div class="price-card">
+                <div class="price-label">E10 Petrol</div>
+                <div class="price-val">${e10Display}</div>
+              </div>
+              <div class="price-card">
+                <div class="price-label">B7 Diesel</div>
+                <div class="price-val">${b7Display}</div>
+              </div>
+            </div>
+
+            <div class="badge-bar">
+              ${is24hr ? '<span class="badge">24 Hours</span>' : ''}
+              ${carWash ? '<span class="badge">Car Wash</span>' : ''}
+              ${isSupermarket ? '<span class="badge">Supermarket</span>' : ''}
+            </div>
+          </div>
+        `;
+
+        L.marker([s.sLat, s.sLng], { icon: customIcon }).addTo(markerGroup).bindPopup(popupContent);
+        bounds.push([s.sLat, s.sLng]);
+      });
+
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }
+
+    // Message notification toast (replaces alert)
+    function showToast(message) {
+      let toast = document.getElementById('toast-msg');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-msg';
+        toast.className = 'fixed bottom-6 right-6 z-50 bg-stone-900 text-white text-xs px-4 py-3 rounded-xl shadow-lg border border-stone-700 transition duration-300 opacity-0 pointer-events-none';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 3500);
+    }
+  </script>
 </body>
 </html>
