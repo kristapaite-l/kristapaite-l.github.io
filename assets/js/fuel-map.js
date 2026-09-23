@@ -33,7 +33,6 @@ Papa.parse('../../data/fuel_prices.csv', {
       return !isNaN(lat) && !isNaN(lng);
     });
 
-    // Update timestamp element directly once parsed
     const timestampEl = document.getElementById('data-timestamp');
     if (timestampEl) {
       timestampEl.textContent = new Date().toLocaleDateString('en-GB', {
@@ -62,14 +61,28 @@ function formatPrice(val) {
   return parseFloat(val).toFixed(1);
 }
 
-// Get dynamic background color based on position in price spectrum (0 to 1)
-function getGradientColor(ratio) {
-  // Color spectrum from lowest (green) to highest (dark red)
-  if (ratio <= 0.25) return '#1e7e34'; // Green (Lowest)
-  if (ratio <= 0.50) return '#28a745'; // Light Green
-  if (ratio <= 0.75) return '#fd7e14'; // Orange
-  if (ratio < 1.00)  return '#dc3545'; // Red
-  return '#8b0000';                   // Dark Red (Highest)
+// Continuous RGB interpolation from Green (lowest) -> Yellow (mid) -> Red (highest)
+function getContinuousPriceColor(ratio) {
+  // Clamp ratio between 0 and 1
+  const t = Math.max(0, Math.min(1, ratio));
+
+  let r, g, b;
+
+  if (t < 0.5) {
+    // Green (46, 125, 50) to Yellow/Orange (245, 158, 11)
+    const factor = t * 2;
+    r = Math.round(46 + factor * (245 - 46));
+    g = Math.round(125 + factor * (158 - 125));
+    b = Math.round(50 + factor * (11 - 50));
+  } else {
+    // Yellow/Orange (245, 158, 11) to Dark Red (198, 40, 40)
+    const factor = (t - 0.5) * 2;
+    r = Math.round(245 + factor * (198 - 245));
+    g = Math.round(158 + factor * (40 - 158));
+    b = Math.round(11 + factor * (40 - 11));
+  }
+
+  return `rgb(${r}, ${g}, ${b})`;
 }
 
 // Location Search Handler (Postcode or Place Name)
@@ -152,13 +165,11 @@ function renderNearbyStations(centerLat, centerLng) {
     const e10Display = e10Formatted ? `${e10Formatted}p` : 'N/A';
     const b7Display = b7Formatted ? `${b7Formatted}p` : 'N/A';
 
-    // Calculate relative price ratio (0 = cheapest in area, 1 = most expensive in area)
-    let markerColor = '#8c1d40';
+    // Calculate dynamic color for each marker based on relative local price
+    let markerColor = '#2e7d32'; // Default green
     if (s.e10Val && minPrice !== null && maxPrice !== null && maxPrice > minPrice) {
       const ratio = (s.e10Val - minPrice) / (maxPrice - minPrice);
-      markerColor = getGradientColor(ratio);
-    } else if (s.e10Val && minPrice === maxPrice) {
-      markerColor = '#1e7e34'; // All stations equal price
+      markerColor = getContinuousPriceColor(ratio);
     }
 
     const customIcon = L.divIcon({
