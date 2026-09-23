@@ -4,7 +4,7 @@ const ukBounds = L.latLngBounds(
   L.latLng(60.9, 1.8)   // North East
 );
 
-// Initialize map centered on UK without default markers
+// Initialize map centered on UK with NO initial markers
 const map = L.map('map', {
   maxBounds: ukBounds,
   maxBoundsViscosity: 1.0,
@@ -17,11 +17,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-// Store raw dataset and active map markers layer group
+// Store raw dataset and create empty marker layer group
 let allStations = [];
 const markerGroup = L.layerGroup().addTo(map);
 
-// Parse CSV once on page load
+// Parse CSV once on load, but DO NOT render any markers automatically
 Papa.parse('../../data/fuel_prices.csv', {
   download: true,
   header: true,
@@ -32,10 +32,11 @@ Papa.parse('../../data/fuel_prices.csv', {
       const lng = parseFloat(row['forecourts.location.longitude']);
       return !isNaN(lat) && !isNaN(lng);
     });
+    // No marker creation loop here — map remains completely blank until search
   }
 });
 
-// Calculate distance in km between two lat/lng points (Haversine formula)
+// Calculate distance in km between two points
 function getDistanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -46,20 +47,20 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
-// Format price value safely to 1 decimal place
+// Format price to 1 decimal place
 function formatPrice(val) {
   if (!val || isNaN(val)) return null;
   return parseFloat(val).toFixed(1);
 }
 
-// Search location (Postcode or Place Name)
+// Location Search Handler (Postcode or Place Name)
 async function searchLocation() {
   const query = document.getElementById('location-input').value.trim();
   if (!query) return;
 
   let lat, lng;
 
-  // 1. Try UK Postcode lookup first
+  // 1. Try Postcode Lookup
   try {
     const pcRes = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(query)}`);
     const pcData = await pcRes.json();
@@ -68,10 +69,10 @@ async function searchLocation() {
       lng = pcData.result.longitude;
     }
   } catch (e) {
-    // Ignore and fallback to place lookup
+    // Fall back to Nominatim
   }
 
-  // 2. Fallback to OpenStreetMap Nominatim for town/city names
+  // 2. Try Nominatim Geocoding for Place Names
   if (!lat || !lng) {
     try {
       const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=gb&q=${encodeURIComponent(query)}`);
@@ -87,18 +88,18 @@ async function searchLocation() {
   }
 
   if (!lat || !lng) {
-    alert('Location or postcode not found. Please try a valid UK city, town, or postcode.');
+    alert('Location not found. Please enter a valid UK postcode or city/town name.');
     return;
   }
 
   renderNearbyStations(lat, lng);
 }
 
-// Render nearby stations with price annotations and high/low formatting
+// Filter and render markers ONLY for searched location
 function renderNearbyStations(centerLat, centerLng) {
+  // Clear any existing search markers
   markerGroup.clearLayers();
 
-  // Find stations within ~12km radius of searched location
   const searchRadiusKm = 12;
   const nearby = allStations.map(station => {
     const sLat = parseFloat(station['forecourts.location.latitude']);
@@ -109,12 +110,12 @@ function renderNearbyStations(centerLat, centerLng) {
   }).filter(s => s.dist <= searchRadiusKm);
 
   if (nearby.length === 0) {
-    alert('No fuel stations found near this location in the dataset.');
+    alert('No stations found within 12km of this location in the current dataset.');
     map.setView([centerLat, centerLng], 12);
     return;
   }
 
-  // Calculate high and low E10 prices in local area for conditional formatting
+  // Find local min/max prices for local conditional formatting
   const validPrices = nearby.map(s => s.e10Val).filter(p => !isNaN(p));
   const minPrice = validPrices.length ? Math.min(...validPrices) : null;
   const maxPrice = validPrices.length ? Math.max(...validPrices) : null;
@@ -134,14 +135,14 @@ function renderNearbyStations(centerLat, centerLng) {
     const e10Display = e10Formatted ? `${e10Formatted}p` : 'N/A';
     const b7Display = b7Formatted ? `${b7Formatted}p` : 'N/A';
 
-    // Determine conditional color class
+    // Conditional styling rule
     let priceClass = 'price-mid';
     if (s.e10Val && minPrice !== null && maxPrice !== null && minPrice !== maxPrice) {
       if (s.e10Val === minPrice) priceClass = 'price-low';
       else if (s.e10Val === maxPrice) priceClass = 'price-high';
     }
 
-    // Custom map pin icon displaying rounded price
+    // Dynamic marker showing rounded price on the pin
     const customIcon = L.divIcon({
       className: 'custom-price-pin',
       html: `<div class="marker-pill ${priceClass}">${e10Display}</div>`,
