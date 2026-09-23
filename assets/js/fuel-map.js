@@ -21,47 +21,28 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 let allStations = [];
 const markerGroup = L.layerGroup().addTo(map);
 
-// 1. Fetch file header to dynamically populate the data timestamp
-fetch('../../data/fuel_prices.csv', { method: 'HEAD' })
-  .then(response => {
-    const lastModified = response.headers.get('Last-Modified');
-    const timestampEl = document.getElementById('data-timestamp');
-    
-    if (timestampEl) {
-      if (lastModified) {
-        const dateObj = new Date(lastModified);
-        timestampEl.textContent = dateObj.toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      } else {
-        timestampEl.textContent = new Date().toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        });
-      }
-    }
-  })
-  .catch(() => {
-    const timestampEl = document.getElementById('data-timestamp');
-    if (timestampEl) timestampEl.textContent = 'Recent';
-  });
-
-// 2. Parse CSV once on load, but DO NOT render any markers automatically
+// Parse CSV once on load
 Papa.parse('../../data/fuel_prices.csv', {
   download: true,
   header: true,
   skipEmptyLines: true,
-  complete: function(results) {
+  complete: function(results, file) {
+    // Process station data
     allStations = results.data.filter(row => {
       const lat = parseFloat(row['forecourts.location.latitude']);
       const lng = parseFloat(row['forecourts.location.longitude']);
       return !isNaN(lat) && !isNaN(lng);
     });
+
+    // Update timestamp element directly once parsed
+    const timestampEl = document.getElementById('data-timestamp');
+    if (timestampEl) {
+      timestampEl.textContent = new Date().toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
   }
 });
 
@@ -126,7 +107,6 @@ async function searchLocation() {
 
 // Filter and render markers ONLY for searched location
 function renderNearbyStations(centerLat, centerLng) {
-  // Clear any existing search markers
   markerGroup.clearLayers();
 
   const searchRadiusKm = 12;
@@ -144,7 +124,6 @@ function renderNearbyStations(centerLat, centerLng) {
     return;
   }
 
-  // Find local min/max prices for local conditional formatting
   const validPrices = nearby.map(s => s.e10Val).filter(p => !isNaN(p));
   const minPrice = validPrices.length ? Math.min(...validPrices) : null;
   const maxPrice = validPrices.length ? Math.max(...validPrices) : null;
@@ -164,14 +143,12 @@ function renderNearbyStations(centerLat, centerLng) {
     const e10Display = e10Formatted ? `${e10Formatted}p` : 'N/A';
     const b7Display = b7Formatted ? `${b7Formatted}p` : 'N/A';
 
-    // Conditional styling rule
     let priceClass = 'price-mid';
     if (s.e10Val && minPrice !== null && maxPrice !== null && minPrice !== maxPrice) {
       if (s.e10Val === minPrice) priceClass = 'price-low';
       else if (s.e10Val === maxPrice) priceClass = 'price-high';
     }
 
-    // Dynamic marker showing rounded price on the pin
     const customIcon = L.divIcon({
       className: 'custom-price-pin',
       html: `<div class="marker-pill ${priceClass}">${e10Display}</div>`,
