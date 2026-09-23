@@ -1,32 +1,25 @@
 import os
 import sys
 import pandas as pd
-import requests
+from curl_cffi import requests
 
-# 1. Retrieve credentials from environment variables
+# 1. Credentials from Environment Variables
 CLIENT_ID = os.environ.get("FUEL_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("FUEL_CLIENT_SECRET")
 
 if not CLIENT_ID or not CLIENT_SECRET:
-  print("Error: Missing FUEL_CLIENT_ID or FUEL_CLIENT_SECRET environment variable.")
-  sys.exit(1)
+    print("Error: FUEL_CLIENT_ID or FUEL_CLIENT_SECRET environment variable is missing.")
+    sys.exit(1)
 
-# 2. Base domain
-BASE_URL = "https://developer.fuel-finder.service.gov.uk"
-
-# Potential token endpoint paths on the GOV.UK developer portal
-TOKEN_ENDPOINTS = [
-    f"{BASE_URL}/oauth/token",
-    f"{BASE_URL}/fuel-finder/apis-ifr/access-token",
-    f"{BASE_URL}/api/v1/oauth/token"
-]
-
-PRICES_ENDPOINT = f"{BASE_URL}/api/v1/prices"
+# 2. Correct GOV.UK API Endpoints
+# Public API gateway host uses hyphens: api.fuel-finder.service.gov.uk
+BASE_URL = "https://api.fuel-finder.service.gov.uk"
+TOKEN_URL = f"{BASE_URL}/oauth/token"
+PRICES_ENDPOINT = f"{BASE_URL}/v1/prices"
 
 headers = {
     "Content-Type": "application/x-www-form-urlencoded",
-    "Accept": "application/json",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    "Accept": "application/json"
 }
 
 payload = {
@@ -36,42 +29,52 @@ payload = {
     "scope": "fuelfinder.read"
 }
 
-access_token = None
+print(f"Requesting token from: {TOKEN_URL}...")
 
-# Iterate through possible token endpoints
-for token_url in TOKEN_ENDPOINTS:
-    print(f"Trying token endpoint: {token_url}...")
-    try:
-        res = requests.post(token_url, data=payload, headers=headers, timeout=15)
-        print(f"Response ({res.status_code}): {res.text[:200]}")
+try:
+    # impersonate="chrome120" bypasses the SSL handshake failure triggered by Cloudflare/GOV.UK
+    token_res = requests.post(
+        TOKEN_URL, 
+        data=payload, 
+        headers=headers, 
+        impersonate="chrome120", 
+        timeout=15
+    )
+    
+    print(f"Token Status Code: {token_res.status_code}")
+    
+    if token_res.status_code != 200:
+        print(f"Token generation error: {token_res.text}")
+        sys.exit(1)
         
-        if res.status_code == 200:
-            access_token = res.json().get("access_token")
-            print("Successfully acquired access token!")
-            break
-    except Exception as err:
-        print(f"Endpoint failed: {err}")
+    access_token = token_res.json().get("access_token")
+    print("Successfully retrieved access token!")
 
-if not access_token:
-    print("Could not retrieve access token from any candidate endpoint.")
+    # 3. Fetch Price Data
+    api_headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json"
+    }
+
+    print(f"Fetching fuel prices from: {PRICES_ENDPOINT}...")
+    data_res = requests.get(
+        PRICES_ENDPOINT, 
+        headers=api_headers, 
+        impersonate="chrome120", 
+        timeout=30
+    )
+
+    print(f"Data Fetch Status Code: {data_res.status_code}")
+
+    if data_res.status_code != 200:
+        print(f"Data fetch error: {data_res.text}")
+        sys.exit(1)
+
+    json_data = data_res.json()
+    df = pd.json_normalize(json_data)
+    df.to_csv("fuel_prices.csv", index=False)
+    print(f"Successfully saved {len(df)} records to fuel_prices.csv!")
+
+except Exception as err:
+    print(f"Execution Error: {err}")
     sys.exit(1)
-
-# 3. Fetch data using the access token
-api_headers = {
-    "Authorization": f"Bearer {access_token}",
-    "Accept": "application/json",
-    "User-Agent": headers["User-Agent"]
-}
-
-print(f"Fetching fuel prices from: {PRICES_ENDPOINT}...")
-data_res = requests.get(PRICES_ENDPOINT, headers=api_headers, timeout=30)
-
-print(f"Data Fetch Response Status: {data_res.status_code}")
-
-if data_res.status_code != 200:
-    print(f"Data Fetch Failed: {data_res.text}")
-    sys.exit(1)
-
-df = pd.json_normalize(data_res.json())
-df.to_csv("fuel_prices.csv", index=False)
-print(f"Successfully saved {len(df)} records to fuel_prices.csv!")
