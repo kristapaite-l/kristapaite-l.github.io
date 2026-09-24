@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_e096910d485499e4bcda432047d00309 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_e096910d485499e4bcda432047d00309" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_e096910d485499e4bcda432047d00309 = L.map(
+                "map_e096910d485499e4bcda432047d00309",
+                {
+                    center: [-64.77, -64.05],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 9,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_98ad966cc09166ef773b6c81a75d2746 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_98ad966cc09166ef773b6c81a75d2746.addTo(map_e096910d485499e4bcda432047d00309);
+        
+    
+            var marker_7e82d799d44738b6338fb378fec032f8 = L.marker(
+                [-64.773, -64.074],
+                {
+}
+            ).addTo(map_e096910d485499e4bcda432047d00309);
+        
+    
+            var icon_12c04acc1b75bb5244bb36dd3eac5d87 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6ce8c90dd03901e44a9a988aa2271675 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_aa1d0ad64666d1bb4082904ae9842537 = $(`<div id="html_aa1d0ad64666d1bb4082904ae9842537" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; width: 200px;">             <h4 style="margin-bottom: 5px;">Torgersen Island</h4>             <b>Total Penguins:</b> 171<br><br>             <b>Species Breakdown:</b><br>• <b>Adelie:</b> 171<br><br>             <b>Avg Mass:</b> 3691g<br>             <b>Avg Flipper:</b> 189.9mm         </div>         </div>`)[0];
+                popup_6ce8c90dd03901e44a9a988aa2271675.setContent(html_aa1d0ad64666d1bb4082904ae9842537);
+            
+        
+
+        marker_7e82d799d44738b6338fb378fec032f8.bindPopup(popup_6ce8c90dd03901e44a9a988aa2271675)
+        ;
+
+        
+    
+    
+            marker_7e82d799d44738b6338fb378fec032f8.bindTooltip(
+                `<div>
+                     Torgersen Island (171 penguins)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_7e82d799d44738b6338fb378fec032f8.setIcon(icon_12c04acc1b75bb5244bb36dd3eac5d87);
+            
+    
+            var marker_f6b564d72034ce549b714b810cbe01c6 = L.marker(
+                [-64.8, -63.783],
+                {
+}
+            ).addTo(map_e096910d485499e4bcda432047d00309);
+        
+    
+            var icon_8093b454e972d1d484a1aa38135b3da6 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_899e5a8862d380c54a7f0f79cfca7ab9 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_19b5d8a62aff3ee101f5da40c806a412 = $(`<div id="html_19b5d8a62aff3ee101f5da40c806a412" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; width: 200px;">             <h4 style="margin-bottom: 5px;">Biscoe Island</h4>             <b>Total Penguins:</b> 302<br><br>             <b>Species Breakdown:</b><br>• <b>Gentoo:</b> 288<br>• <b>Adelie:</b> 14<br><br>             <b>Avg Mass:</b> 4993g<br>             <b>Avg Flipper:</b> 216.1mm         </div>         </div>`)[0];
+                popup_899e5a8862d380c54a7f0f79cfca7ab9.setContent(html_19b5d8a62aff3ee101f5da40c806a412);
+            
+        
+
+        marker_f6b564d72034ce549b714b810cbe01c6.bindPopup(popup_899e5a8862d380c54a7f0f79cfca7ab9)
+        ;
+
+        
+    
+    
+            marker_f6b564d72034ce549b714b810cbe01c6.bindTooltip(
+                `<div>
+                     Biscoe Island (302 penguins)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_f6b564d72034ce549b714b810cbe01c6.setIcon(icon_8093b454e972d1d484a1aa38135b3da6);
+            
+    
+            var marker_bf54fe4f390f418ce0bf46833205caae = L.marker(
+                [-64.733, -64.233],
+                {
+}
+            ).addTo(map_e096910d485499e4bcda432047d00309);
+        
+    
+            var icon_9f031cc30d21745eb759520d351db938 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "cadetblue",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_68285bf01ad9fcdf71311e1c7aa66a21 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_29006787f6aeb4a6d97c0cf06aedad0f = $(`<div id="html_29006787f6aeb4a6d97c0cf06aedad0f" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; width: 200px;">             <h4 style="margin-bottom: 5px;">Dream Island</h4>             <b>Total Penguins:</b> 527<br><br>             <b>Species Breakdown:</b><br>• <b>Adelie:</b> 276<br>• <b>Chinstrap:</b> 251<br><br>             <b>Avg Mass:</b> 3725g<br>             <b>Avg Flipper:</b> 192.6mm         </div>         </div>`)[0];
+                popup_68285bf01ad9fcdf71311e1c7aa66a21.setContent(html_29006787f6aeb4a6d97c0cf06aedad0f);
+            
+        
+
+        marker_bf54fe4f390f418ce0bf46833205caae.bindPopup(popup_68285bf01ad9fcdf71311e1c7aa66a21)
+        ;
+
+        
+    
+    
+            marker_bf54fe4f390f418ce0bf46833205caae.bindTooltip(
+                `<div>
+                     Dream Island (527 penguins)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_bf54fe4f390f418ce0bf46833205caae.setIcon(icon_9f031cc30d21745eb759520d351db938);
+            
+</script>
+</html>
