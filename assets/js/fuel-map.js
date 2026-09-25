@@ -35,11 +35,22 @@ Papa.parse('../../data/fuel/fuel_prices.csv', {
 
     const timestampEl = document.getElementById('data-timestamp');
     if (timestampEl) {
-      timestampEl.textContent = new Date().toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
+      const candidateTimestamps = allStations
+        .map(row => row.forecourt_update_timestamp)
+        .filter(Boolean)
+        .map(value => new Date(value))
+        .filter(date => !isNaN(date.getTime()));
+
+      if (candidateTimestamps.length > 0) {
+        const newestTimestamp = new Date(Math.max(...candidateTimestamps.map(date => date.getTime())));
+        timestampEl.textContent = newestTimestamp.toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      } else {
+        timestampEl.textContent = 'Timestamp unavailable';
+      }
     }
   }
 });
