@@ -281,7 +281,8 @@
     let allStations = [];
     const markerGroup = L.layerGroup().addTo(map);
 
-    // Try relative path first, fallback to root path
+    const csvPath = '../../data/fuel/fuel_prices.csv';
+
     function loadCSVData(path) {
       Papa.parse(path, {
         download: true,
@@ -294,25 +295,20 @@
               const lng = parseFloat(row['forecourts.location.longitude']);
               return !isNaN(lat) && !isNaN(lng);
             });
-            
+
             const timestampEl = document.getElementById('data-timestamp');
             if (timestampEl) timestampEl.textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-          } else if (path !== '/data/fuel_prices.csv') {
-            loadCSVData('/data/fuel_prices.csv');
-          }
-        },
-        error: function() {
-          if (path !== '/data/fuel_prices.csv') {
-            loadCSVData('/data/fuel_prices.csv');
           } else {
             document.getElementById('data-timestamp').textContent = 'File Not Found';
           }
+        },
+        error: function() {
+          document.getElementById('data-timestamp').textContent = 'File Not Found';
         }
       });
     }
 
-    // Start CSV Load
-    loadCSVData('../../data/fuel_prices.csv');
+    loadCSVData(csvPath);
 
     function getDistanceKm(lat1, lon1, lat2, lon2) {
       const R = 6371;

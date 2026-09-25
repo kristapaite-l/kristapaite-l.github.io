@@ -22,7 +22,7 @@ let allStations = [];
 const markerGroup = L.layerGroup().addTo(map);
 
 // Parse CSV once on load
-Papa.parse('../../data/fuel_prices.csv', {
+Papa.parse('../../data/fuel/fuel_prices.csv', {
   download: true,
   header: true,
   skipEmptyLines: true,
