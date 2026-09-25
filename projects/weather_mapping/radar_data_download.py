@@ -19,16 +19,19 @@ os.makedirs(output_dir, exist_ok=True)
 os.makedirs(frames_dir, exist_ok=True)
 
 # -------------------------------------------------------------------------
-# 1. FETCH MULTIPLE SCANS
+# 1. FETCH MULTIPLE SCANS (Filtering out MDM files)
 # -------------------------------------------------------------------------
 conn = nexradaws.NexradAwsInterface()
 
-# Query available scans for May 20, 2023 for station KTLX
+# Query available scans
 scans = conn.get_avail_scans(2023, 5, 20, 'KTLX')
 
-# Take a slice of 10 sequential scans (e.g., ~1 hour of radar activity)
-selected_scans = scans[50:60]
-print(f"Processing {len(selected_scans)} sequential scans for animation...")
+# Filter out _MDM files so Py-ART only receives binary volume scans
+valid_scans = [s for s in scans if not s.filename.endswith('_MDM')]
+
+# Take a slice of 10 valid scans
+selected_scans = valid_scans[50:60]
+print(f"Processing {len(selected_scans)} valid sequential scans for animation...")
 
 frame_paths = []
 
