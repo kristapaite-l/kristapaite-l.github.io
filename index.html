@@ -67,6 +67,7 @@ section { padding: 82px 0; border-top: 1px solid var(--line); }
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 27px; min-height: 260px; display: flex; flex-direction: column; transition: border-color 0.2s ease; }
 .card:hover { border-color: var(--accent); }
+.card-preview { width: 100%; height: 210px; object-fit: cover; border-radius: 10px; margin-bottom: 16px; border: 1px solid var(--line); }
 .tag { display: inline-block; background: var(--bg-subtle); color: var(--accent); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.75rem; font-weight: 700; margin: 0 5px 8px 0; }
 .card .bottom { margin-top: auto; padding-top: 20px; }
 .text-link { font-weight: 700; color: var(--accent); }
@@ -100,6 +101,7 @@ footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex
         <a href="#projects">Projects ▾</a>
         <div class="dropdown-menu">
           <a href="projects/fuel_mapping/fuel_map.html">Interactive UK Fuel Price Map</a>
+          <a href="projects/weather_mapping/storm_tracking_movement.gif">NEXRAD Storm Movement Tracker</a>
         </div>
       </div>
       <a href="#about">About</a>
@@ -121,7 +123,7 @@ footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex
   </div>
   <div class="hero-note">
     <strong>Staying data focused.</strong>
-    <p>SQL · Excel · Python · Reporting · Data quality · Stakeholder communication</p>
+    <p>SQL · Excel · Python · Py-ART · Reporting · Data quality · Stakeholder communication</p>
   </div>
 </header>
 
@@ -131,10 +133,11 @@ footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex
       <div class="section-head">
         <div>
           <div class="eyebrow">Selected work</div>
-          2>Projects</h2>
+          <h2>Projects</h2>
         </div>
       </div>
       <div class="grid">
+        <!-- Project 1: Fuel Mapping -->
         <article class="card">
           <div>
             <span class="tag">Leaflet.js</span><span class="tag">GOV.UK Schema</span>
@@ -145,6 +148,21 @@ footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex
             <a class="text-link" href="projects/fuel_mapping/fuel_map.html">Open interactive project →</a>
           </div>
         </article>
+
+        <!-- Project 2: Weather Mapping & Storm Tracking -->
+        <article class="card">
+          <div>
+            <img src="projects/weather_mapping/storm_tracking_movement.gif" alt="NEXRAD Storm Movement Tracking" class="card-preview">
+            <span class="tag">Python</span><span class="tag">Py-ART</span><span class="tag">NOAA NEXRAD</span>
+            <h3>Dynamic Storm Movement Tracker</h3>
+            <p>Automated pipeline retrieving raw NEXRAD Level II binary radar scans from AWS S3, parsing radial sweeps into Cartesian grids, and tracking convective storm centroids over time.</p>
+          </div>
+          <div class="bottom">
+            <a class="text-link" href="projects/weather_mapping/storm_tracking_movement.gif" target="_blank">View full animation →</a>
+          </div>
+        </article>
+
+        <!-- Project 3: Customer Churn -->
         <article class="card">
           <div>
             <span class="tag">SQL</span><span class="tag">Analysis</span>
@@ -155,21 +173,13 @@ footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex
             <a class="text-link" href="#">View case study →</a>
           </div>
         </article>
+
+        <!-- Project 4: Performance Reporting -->
         <article class="card">
           <div>
             <span class="tag">Power BI</span><span class="tag">Dashboard</span>
             <h3>Performance Reporting Dashboard</h3>
             <p>Built an interactive dashboard to turn recurring operational data into a concise view of KPIs, trends and performance against targets.</p>
-          </div>
-          <div class="bottom">
-            <a class="text-link" href="#">View case study →</a>
-          </div>
-        </article>
-        <article class="card">
-          <div>
-            <span class="tag">Excel</span><span class="tag">Reporting</span>
-            <h3>Automated Reporting Workflow</h3>
-            <p>Streamlined a recurring reporting process using structured data, formulas and reusable reporting logic, reducing manual work and improving consistency.</p>
           </div>
           <div class="bottom">
             <a class="text-link" href="#">View case study →</a>
@@ -192,6 +202,7 @@ footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex
           <span class="skill">SQL</span>
           <span class="skill">Excel</span>
           <span class="skill">Power BI</span>
+          <span class="skill">Python (Py-ART / Geospatial)</span>
           <span class="skill">Data visualisation</span>
           <span class="skill">Reporting</span>
           <span class="skill">Data cleaning</span>
