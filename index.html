@@ -153,15 +153,19 @@ footer { padding: 35px 0; color: var(--muted); font-size: 0.85rem; display: flex
         <article class="card">
           <div>
             <img src="projects/weather_mapping/storm_tracking_movement.gif" alt="NEXRAD Storm Movement Tracking" class="card-preview">
-            <span class="tag">Python</span><span class="tag">Py-ART</span><span class="tag">NOAA NEXRAD</span>
-            <h3>Dynamic Storm Movement Tracker</h3>
-            <p>Automated pipeline retrieving raw NEXRAD Level II binary radar scans from AWS S3, parsing radial sweeps into Cartesian grids, and tracking convective storm centroids over time.</p>
+            <span class="tag">Python</span><span class="tag">Py-ART</span><span class="tag">NOAA NEXRAD</span><span class="tag">GeoPandas</span>
+            <h3>Dynamic Storm Movement Tracker & Proximity Analytics</h3>
+            <p>An end-to-end Python spatial data pipeline that fetches raw NEXRAD Level II binary radar scans from NOAA's AWS S3 bucket, converts radial sweep coordinates into Cartesian grids, and calculates convective storm core centroids ($\ge 40\text{ dBZ}$).</p>
+            
+            <p style="font-size: 0.88rem; color: var(--muted); margin-top: 10px;">
+              <strong>Data & Methods:</strong> Evaluated multi-scan time-series data for Norman/Oklahoma City (KTLX radar site). Built spatial buffers around storm cores ($\ge 45\text{ dBZ}$) using <code>GeoPandas</code> and <code>Shapely</code>, performing spatial joins against infrastructure datasets to calculate estimated population exposure at risk.
+            </p>
           </div>
           <div class="bottom">
-            <a class="text-link" href="projects/weather_mapping/storm_tracking_movement.gif" target="_blank">View full animation →</a>
+            <a class="text-link" href="projects/weather_mapping/storm_tracking_movement.gif" target="_blank" rel="noopener">Open full animation in new tab →</a>
           </div>
         </article>
-
+        
         <!-- Project 3: Customer Churn -->
         <article class="card">
           <div>
