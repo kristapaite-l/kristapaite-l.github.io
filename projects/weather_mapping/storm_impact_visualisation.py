@@ -86,8 +86,8 @@ if severe_points:
     print(f"Cities in 15km Warning Zone: {impacted_cities['City'].tolist()}")
     print(f"Total Estimated Population at Risk: {total_pop_at_risk:,}")
 
-    # -------------------------------------------------------------------------
-    # 4. MAP VISUALIZATION
+# -------------------------------------------------------------------------
+    # 4. ENHANCED MAP VISUALIZATION
     # -------------------------------------------------------------------------
     fig = plt.figure(figsize=(11, 9))
     ax = plt.axes(projection=ccrs.PlateCarree())
@@ -96,29 +96,74 @@ if severe_points:
     display = pyart.graph.GridMapDisplay(grid)
     display.plot_grid(ref_field, level=0, ax=ax, cmap='NWSRef', vmin=-10, vmax=75)
 
-    # Plot 15km Risk Buffer Zone
-    buffer_gdf.plot(ax=ax, facecolor='red', alpha=0.25, edgecolor='darkred', linewidth=2, label='15km Impact Buffer Zone')
+    # Plot 15km Risk Buffer Zone (Semi-transparent red hatching)
+    buffer_gdf.plot(
+        ax=ax, 
+        facecolor='red', 
+        alpha=0.20, 
+        edgecolor='crimson', 
+        linewidth=2, 
+        hatch='//',
+        label='15km Risk Buffer Zone'
+    )
 
-    # Plot All Cities
-    cities_gdf.plot(ax=ax, color='blue', markersize=40, label='Unimpacted Cities')
-    
-    # Highlight Impacted Cities
+    # Separate impacted vs unimpacted city GeoDataFrames
+    impacted_indices = impacted_cities.index
+    unimpacted_gdf = cities_gdf[~cities_gdf.index.isin(impacted_indices)]
+
+    # 1. Plot Unimpacted Cities (Navy Diamonds with White Outline)
+    if not unimpacted_gdf.empty:
+        unimpacted_gdf.plot(
+            ax=ax, 
+            color='#0d233a', 
+            marker='D', 
+            markersize=65, 
+            edgecolor='white', 
+            linewidth=1.5,
+            label='Unimpacted City'
+        )
+
+    # 2. Plot Impacted Cities (Bright Magenta/Cyan Triangles with Thick Black Outline)
     if not impacted_cities.empty:
-        impacted_cities.plot(ax=ax, color='yellow', edgecolor='black', markersize=90, label='Cities At Risk')
+        impacted_cities.plot(
+            ax=ax, 
+            color='#ff007f', 
+            marker='^', 
+            markersize=120, 
+            edgecolor='black', 
+            linewidth=2.0,
+            label='City At Risk (Impacted)'
+        )
+        
+        # Add labels for impacted cities with high-contrast text boxes
         for _, row in impacted_cities.iterrows():
-            ax.text(row['Longitude'] + 0.02, row['Latitude'], row['City'], 
-                    fontsize=10, fontweight='bold', color='black',
-                    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="black", lw=0.5))
+            ax.text(
+                row['Longitude'] + 0.02, 
+                row['Latitude'] + 0.01, 
+                f"{row['City']}\n(Pop: {row['Population']:,})", 
+                fontsize=9, 
+                fontweight='bold', 
+                color='black',
+                bbox=dict(boxstyle="round,pad=0.3", fc="#ffffff", ec="#ff007f", lw=1.5)
+            )
 
+    # Map details & formatting
     ax.coastlines()
     ax.gridlines(draw_labels=True, linestyle='--', alpha=0.5)
+
+    plt.title(
+        f"Severe Weather Proximity & Population Risk Analysis\n"
+        f"Total Estimated Population at Risk: {total_pop_at_risk:,}", 
+        fontsize=12, 
+        fontweight='bold',
+        pad=12
+    )
     
-    plt.title(f"Severe Weather Risk & Impact Zone Analysis\nTotal Population at Risk: {total_pop_at_risk:,}", fontsize=12)
-    plt.legend(loc='lower right')
+    plt.legend(loc='lower right', framealpha=0.95, facecolor='white')
 
     save_path = os.path.join(output_dir, 'proximity_risk_analysis.png')
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    print(f"Saved risk map to: {save_path}")
+    print(f"Saved enhanced risk map to: {save_path}")
     plt.show()
 else:
     print("No severe core points (>= 15 dBZ) detected in this scan.")
