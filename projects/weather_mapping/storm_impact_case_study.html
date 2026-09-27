@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXRAD Weather Risk & Spatial Analytics | Laura Kristapaite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fbf9f5;
+  --bg-subtle: #f3efe6;
+  --ink: #1a1a1a;
+  --muted: #5e5a55;
+  --line: #e2ded4;
+  --card: #ffffff;
+  --accent: #8c1d40;
+  --accent-light: #f7e8ec;
+  --accent-hover: #6e1531;
+  --max: 900px;
+  --font-serif: "Newsreader", Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font-sans); background: var(--bg); color: var(--ink); line-height: 1.6; }
+a { color: var(--accent); text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+
+.wrap { max-width: var(--max); margin: auto; padding: 0 24px; }
+
+header { padding: 40px 0 20px; border-bottom: 1px solid var(--line); margin-bottom: 40px; }
+.back-link { display: inline-block; margin-bottom: 20px; font-size: 0.9rem; }
+h1 { font-family: var(--font-serif); font-size: 2.8rem; line-height: 1.1; margin: 0 0 16px; }
+.meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.tag { background: var(--bg-subtle); color: var(--accent); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.78rem; font-weight: 700; }
+
+.section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 32px; margin-bottom: 30px; }
+h2 { font-family: var(--font-serif); font-size: 1.8rem; margin-top: 0; margin-bottom: 16px; color: var(--ink); }
+p, li { color: var(--muted); font-size: 1.02rem; }
+
+.media-box { width: 100%; border-radius: 12px; border: 1px solid var(--line); margin: 20px 0; overflow: hidden; }
+.media-box img { width: 100%; display: block; }
+.caption { font-size: 0.88rem; color: var(--muted); text-align: center; margin-top: 8px; font-style: italic; }
+
+code { background: var(--bg-subtle); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+
+footer { text-align: center; padding: 40px 0; color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a href="../../index.html" class="back-link">← Back to Portfolio</a>
+    <h1>Severe Weather Risk & Proximity Analytics</h1>
+    <div class="meta">
+      <span class="tag">Python</span>
+      <span class="tag">Py-ART</span>
+      <span class="tag">GeoPandas</span>
+      <span class="tag">NOAA NEXRAD S3</span>
+      <span class="tag">Shapely</span>
+    </div>
+    <p>An end-to-end spatial data engineering and analytics project processing raw binary radar scans to identify severe convective storm cores, model risk buffers, and calculate real-time population exposure.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- Section 1: Overview & Dynamic Tracking -->
+  <section class="section">
+    <h2>1. Dynamic Storm Tracking</h2>
+    <p>Using raw Level II binary archives from NOAA's NEXRAD network via AWS S3 (Station <code>KTLX</code>, Oklahoma), this pipeline parses polar radial velocity and reflectivity sweeps and interpolates them onto a 3D Cartesian grid ($500 \times 500$ points spanning 200 km around the radar site).</p>
+    
+    <div class="media-box">
+      <img src="storm_tracking_movement.gif" alt="NEXRAD Storm Movement Animation">
+    </div>
+    <div class="caption">Figure 1: Sequential radar scan tracking storm centroid movements over Norman/Oklahoma City.</div>
+  </section>
+
+  <!-- Section 2: Proximity & Risk Analytics -->
+  <section class="section">
+    <h2>2. Spatial Risk & Proximity Analysis</h2>
+    <p>To move beyond simple visualization, the pipeline converts continuous grid reflectivities into vector geometries. Using projected metric coordinate reference systems (<code>UTM Zone 14N / EPSG:32614</code>), it constructs a 15 km spatial buffer around severe cells and performs spatial joins (<code>sjoin</code>) against population centers.</p>
+    
+    <div class="media-box">
+      <img src="proximity_risk_analysis.png" alt="Spatial Proximity Risk Map">
+    </div>
+    <div class="caption">Figure 2: 15 km risk buffer zone evaluation highlighting impacted municipalities and exposed population totals.</div>
+  </section>
+
+  <!-- Section 3: Key Technical Features -->
+  <section class="section">
+    <h2>3. Technical Implementation Details</h2>
+    <ul>
+      <li><strong>Data Retrieval:</strong> Anonymous AWS S3 bucket requests via <code>nexradaws</code> fetching uncompressed radar volume files while filtering out metadata (<code>_MDM</code>) files.</li>
+      <li><strong>Grid Transformation:</strong> Polar-to-Cartesian coordinate mapping using <code>Py-ART</code> (ARM Radar Toolkit).</li>
+      <li><strong>Centroid Calculation:</strong> Isolating high-reflectivity convective cores and computing spatial centers of mass using <code>scipy.ndimage.center_of_mass</code>.</li>
+      <li><strong>Geospatial Analysis:</strong> Projected metric buffer creation ($15\text{ km}$) and point-in-polygon spatial intersects using <code>GeoPandas</code> and <code>Shapely</code>.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    © 2026 Laura Kristapaite · Data Analyst Portfolio
+  </div>
+</footer>
+
+</body>
+</html>
