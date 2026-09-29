@@ -17,9 +17,11 @@ SESSION_FILE = "auth_state.json"
 TARGET_DIR = r"C:\Users\Laura\Github\kristapaite-l.github.io\kristapaite-l.github.io\data\languages\mandarin"
 SNAPSHOT_DIR = os.path.join(TARGET_DIR, "dashboard_snapshot")
 DASHBOARD_MASTER_CSV = os.path.join(TARGET_DIR, "hack_chinese_daily_dashboard.csv")
-VOCAB_MASTER_CSV = os.path.join(TARGET_DIR, "hack_chinese_master_vocab.csv")
 TEMP_DB = os.path.join(TARGET_DIR, "temp_staging.db")
 
+# Helper function to get dated vocab CSV path
+def get_vocab_csv_path(today_str):
+    return os.path.join(TARGET_DIR, f"hack_chinese_master_vocab_{today_str}.csv")
 
 def scrape_dashboard_to_temp_db(page, today_str):
     """Step 1: Scrape dashboard metrics, save dated snapshot, and stage in SQLite."""
@@ -84,7 +86,7 @@ def scrape_dashboard_to_temp_db(page, today_str):
 
 
 def download_vocab_csv_to_temp_db(page, today_str):
-    """Step 2: Automate UI clicks on Dashboard modal overlay to export and stage vocabulary CSV."""
+    """Step 2: Navigate three-dots menu -> Settings -> Data -> Exports -> Export All Learned Words."""
     print("Navigating dashboard settings modal via UI clicks...")
     
     # Ensure page is on dashboard
@@ -92,72 +94,64 @@ def download_vocab_csv_to_temp_db(page, today_str):
         page.goto("https://www.hackchinese.com/dashboard")
         page.wait_for_timeout(2000)
 
-    # 1. Click the orange settings gear icon in top nav header
-    print("Clicking settings gear icon...")
-    gear_clicked = False
-    gear_selectors = [
-        'header a[href*="settings"]',
-        'button:has(svg)',
-        'a[href*="settings"]',
-        'header button'
-    ]
+    # 1. Click the three dots icon next to the "Study" button
+    print("Clicking three-dots menu icon...")
     
-    for selector in gear_selectors:
+    three_dots_locators = [
+        'header a:has-text("Study") + button',
+        'header div:has-text("Study") button',
+        'a[href*="study"] + button',
+        'header button:has(svg)'
+    ]
+
+    clicked_dots = False
+    for selector in three_dots_locators:
         try:
-            loc = page.locator(selector).last
-            if loc.is_visible(timeout=2000):
-                loc.click(timeout=3000)
-                gear_clicked = True
-                print(f"Clicked gear icon using selector: {selector}")
+            btn = page.locator(selector).first
+            if btn.is_visible(timeout=2000):
+                btn.click()
+                clicked_dots = True
+                print(f"Successfully clicked three-dots menu using selector: {selector}")
                 break
         except Exception:
             continue
 
-    if not gear_clicked:
-        print("Fallback: Clicking top right navigation area...")
-        page.mouse.click(1220, 45)
+    if not clicked_dots:
+        print("Fallback: Clicking top-right menu coordinates...")
+        # Direct fallback click on top right header controls near three-dots icon
+        page.mouse.click(1245, 30)
 
     time.sleep(1.5)
 
-    # 2. Click "Settings" in dropdown menu
-    print("Clicking 'Settings' option...")
-    try:
-        settings_loc = page.locator('text="Settings"').first
-        settings_loc.wait_for(state="visible", timeout=5000)
-        settings_loc.click(force=True)
-    except Exception:
-        page.locator('div, button, a').filter(has_text=re.compile(r"^Settings$")).first.click(force=True)
+    # 2. Click "Settings" in the dropdown menu
+    print("Clicking 'Settings' from menu...")
+    settings_item = page.locator('text="Settings"').locator('visible=true').first
+    settings_item.wait_for(state="visible", timeout=5000)
+    settings_item.click()
 
     time.sleep(1.5)
 
-    # 3. Click "Data" in settings menu
+    # 3. Click "Data" in the settings modal sidebar
     print("Clicking 'Data' tab...")
-    try:
-        data_loc = page.locator('text="Data"').first
-        data_loc.wait_for(state="visible", timeout=5000)
-        data_loc.click(force=True)
-    except Exception:
-        page.locator('div, button, a').filter(has_text=re.compile(r"^Data$")).first.click(force=True)
+    data_item = page.locator('text="Data"').locator('visible=true').first
+    data_item.wait_for(state="visible", timeout=5000)
+    data_item.click()
 
     time.sleep(1.5)
 
     # 4. Click "Exports" tab
     print("Clicking 'Exports' tab...")
-    try:
-        exports_loc = page.locator('text="Exports"').first
-        exports_loc.wait_for(state="visible", timeout=5000)
-        exports_loc.click(force=True)
-    except Exception:
-        page.locator('div, button, a').filter(has_text=re.compile(r"^Exports$")).first.click(force=True)
+    exports_item = page.locator('text="Exports"').locator('visible=true').first
+    exports_item.wait_for(state="visible", timeout=5000)
+    exports_item.click()
 
     time.sleep(1.5)
 
+    # 5. Click "Export All Learned Words" to download
     print("Triggering 'Export All Learned Words' download...")
-
-    # 5. Expect download event and click "Export All Learned Words"
     with page.expect_download(timeout=30000) as download_info:
-        export_btn = page.locator('button:has-text("Export All Learned Words"), a:has-text("Export All Learned Words")').first
-        export_btn.click(force=True)
+        export_btn = page.locator('button:has-text("Export All Learned Words"), a:has-text("Export All Learned Words")').locator('visible=true').first
+        export_btn.click()
 
     download = download_info.value
     download_path = os.path.join(TARGET_DIR, "temp_download.csv")
@@ -180,24 +174,41 @@ def download_vocab_csv_to_temp_db(page, today_str):
     vocab_df.to_sql("temp_vocab", conn, if_exists="replace", index=False)
     conn.close()
     print(f"Staged {len(vocab_df)} vocabulary records into SQLite temp database.")
-        
-def process_and_append_all():
-    """Step 3 & 4: Validate snapshot dates + schema, then append both datasets if newer."""
-    conn = sqlite3.connect(TEMP_DB)
 
-    # --- 1. Process Dashboard Metrics ---
-    if "temp_dashboard" in pd.read_sql("SELECT name FROM sqlite_master WHERE type='table';", conn)["name"].values:
+
+def process_and_append_dashboard():
+    """Appends dashboard metrics from temp database to master CSV immediately."""
+    if not os.path.exists(TEMP_DB):
+        return
+
+    conn = sqlite3.connect(TEMP_DB)
+    tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table';", conn)["name"].values
+
+    if "temp_dashboard" in tables:
         temp_dash = pd.read_sql("SELECT * FROM temp_dashboard", conn)
         append_if_new(temp_dash, DASHBOARD_MASTER_CSV, "Dashboard")
-
-    # --- 2. Process Vocabulary Export ---
-    if "temp_vocab" in pd.read_sql("SELECT name FROM sqlite_master WHERE type='table';", conn)["name"].values:
-        temp_vocab = pd.read_sql("SELECT * FROM temp_vocab", conn)
-        append_if_new(temp_vocab, VOCAB_MASTER_CSV, "Vocabulary")
 
     conn.close()
 
 
+def process_and_append_vocab(today_str):
+    """Appends/saves vocabulary metrics from temp database to dated CSV file."""
+    if not os.path.exists(TEMP_DB):
+        return
+
+    conn = sqlite3.connect(TEMP_DB)
+    tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table';", conn)["name"].values
+
+    if "temp_vocab" in tables:
+        temp_vocab = pd.read_sql("SELECT * FROM temp_vocab", conn)
+        vocab_csv_path = get_vocab_csv_path(today_str)
+        
+        # Save directly as today's dated CSV
+        temp_vocab.to_csv(vocab_csv_path, index=False)
+        print(f"Successfully saved dated vocabulary export to {vocab_csv_path}")
+
+    conn.close()
+    
 def append_if_new(temp_df, master_csv_path, dataset_name):
     if temp_df.empty:
         print(f"No {dataset_name} staging data available to process.")
@@ -270,14 +281,21 @@ def run_pipeline():
             context.storage_state(path=SESSION_FILE)
             print("Login successful and session state updated.")
 
-        # Execute both extraction steps using active browser session
+        # Step 1: Scrape dashboard & save to temp DB
         scrape_dashboard_to_temp_db(page, today_str)
-        download_vocab_csv_to_temp_db(page, today_str)
+
+        # Immediate Append: Save dashboard metrics to master CSV right away
+        print("Saving dashboard metrics to master CSV immediately...")
+        process_and_append_dashboard()
+
+        # Step 2: Attempt vocabulary download & staging
+        try:
+            download_vocab_csv_to_temp_db(page, today_str)
+            process_and_append_vocab(today_str)
+        except Exception as e:
+            print(f"Vocabulary export encountered an issue: {e}")
 
         browser.close()
-
-    # Validate and append staging data to respective Master CSVs
-    process_and_append_all()
 
 
 if __name__ == "__main__":
